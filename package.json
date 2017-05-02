@@ -1,0 +1,33 @@
+{
+  "name": "camp-chat-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node ./server/server.js",
+    "dev": "nodemon --watch server ./server/server.js",
+    "test": "nodemon --exec 'mocha -R nyan' test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.17.1",
+    "cors": "^2.8.3",
+    "crypto": "0.0.3",
+    "dotenv": "^4.0.0",
+    "express": "^4.15.2",
+    "jsonwebtoken": "^7.4.0",
+    "mongodb": "^2.2.26",
+    "mongoose": "^4.9.7",
+    "morgan": "^1.8.1",
+    "socket.io": "^1.7.3",
+    "socketio-jwt": "^4.5.0"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "chai-http": "^3.0.0",
+    "mocha": "^3.3.0",
+    "nodemon": "^1.11.0"
+  }
+}
