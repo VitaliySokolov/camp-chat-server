@@ -13,7 +13,7 @@ const messageSchema = mongoose.Schema({
   room: {
     type: ObjectId,
     ref: 'Room',
-    required: true
+    defaul: 0
   },
   sentAt: {
     type: Date,

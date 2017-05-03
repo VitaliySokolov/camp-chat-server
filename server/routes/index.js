@@ -1,9 +1,12 @@
-const express = require('express')
-const router = express.Router()
-const mongoConnected = require('../db.js')
-const jwt = require('jsonwebtoken')
-const config = require('../config.json')
-const fs = require('fs')
+const express = require('express');
+const router = express.Router();
+const fs = require('fs');
+const path = require('path');
+const jwt = require('jsonwebtoken');
+const marked = require('marked');
+
+const config = require('../config.js');
+const User = require('../models/user');
 
 router.post('/login', (req, res) => {
   mongoConnected.then(db => {
@@ -48,14 +51,18 @@ router.post('/signup', (req, res) => {
 })
 
 router.get('/users', (req, res) => {
-  mongoConnected.then(db => {
-    db
-      .collection('users').find({}, { password: 0 })
-      .toArray((err, users) => {
-        res.send(users)
-      })
-  })
-})
+  User.find().select({'_id': 1, 'username': 1}).then((users) => {
+    console.log(users);
+    res.send(users)
+  });
+  // mongoConnected.then(db => {
+  //   db
+  //     .collection('users').find({}, { password: 0 })
+  //     .toArray((err, users) => {
+  //       res.send(users)
+  //     })
+  // })
+});
 
 router.get('/messages', (req, res) => {
   mongoConnected.then(db => {
@@ -72,12 +79,13 @@ router.get('/messages', (req, res) => {
   })
 })
 
-// router.get('/', (req, res, next) => {
-//   fs.readFile(`${__dirname}/readme.md`, 'utf8', (err, data) => {
-//     if (err) return next(err)
+router.get('/', (req, res, next) => {
+  const readmePath = path.resolve(__dirname, '../../readme.md');
+  fs.readFile(readmePath, 'utf8', (err, data) => {
+    if (err) return next(err)
 
-//     res.send(marked(data.toString()))
-//   })
-// })
+    res.send(marked(data.toString()))
+  })
+})
 
 module.exports = router
