@@ -28,9 +28,6 @@ describe('Testing root route', () => {
 });
 
 describe('Testing routes', () => {
-  // User.collection.drop(err => {
-  //   console.error(err);
-  // });
 
   beforeEach(done => {
     const createDefUser = () => {
@@ -42,7 +39,6 @@ describe('Testing routes', () => {
         if (err) {
           console.error(err);
         }
-        // User.find({}, (e, v) => console.log(v))
         done();
       });
     };
@@ -54,16 +50,6 @@ describe('Testing routes', () => {
       createDefUser();
     });
   });
-
-  afterEach(done => {
-    // User.remove((err) => {
-    //   if (err) {
-    //     console.error(err);
-    //   }
-    //   done();
-    // })
-    done();
-  })
 
   describe('GET /users', () => {
     it('should response with user list', (done) => {

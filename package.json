@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node ./server/server.js",
     "dev": "nodemon --watch server ./server/server.js",
-    "test": "nodemon --exec 'mocha -R nyan' test"
+    "test": "nodemon --exec 'NODE_ENV=test mocha -R nyan' test",
+    "prod": "NODE_ENV=production node ./server/server.js"
   },
   "keywords": [],
   "author": "",

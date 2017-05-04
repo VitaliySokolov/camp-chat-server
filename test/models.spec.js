@@ -14,10 +14,6 @@ describe('User model', () => {
     User.remove(() => done());
   });
 
-  afterEach(done => {
-    done();
-  })
-
   it('should not validate new User', () => {
     const user = new User({
       name: 'foo',

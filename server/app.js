@@ -7,7 +7,7 @@ const mongoose = require('mongoose');
 
 const config = require('./config.js');
 const routes = require('./routes');
-
+// console.log(app.settings.env);
 mongoose.connect(config.mongoURL[app.settings.env]);
 
 app.use(express.static('public'));
