@@ -4,20 +4,28 @@ const chai = require('chai');
 const should = chai.should();
 const expect = chai.expect;
 const mongoose = require('mongoose');
+mongoose.Promise = global.Promise;
 
 const app = require('../server/app');
 const User = require('../server/models/user');
 
 describe('User model', () => {
   beforeEach(done => {
-    // console.log(User.collection);
-    User.collection.drop(
-      (err, res) => {
-        if (err) {
-          console.error(err);
-        }
-        done();
-      });
+    User.remove(() => done());
+  });
+
+  afterEach(done => {
+    done();
+  })
+
+  it('should not validate new User', () => {
+    const user = new User({
+      name: 'foo',
+      pass: 'bar',
+    });
+    const error = user.validateSync();
+    const fn = () => { throw error }
+    expect(fn).to.throw(mongoose.Error, /Path `username` is required/);
   });
 
   it('create new User', () => {
@@ -41,6 +49,22 @@ describe('User model', () => {
       expect(res.username).to.equal('foo');
       expect(res.checkPassword('baz')).to.be.true;
       expect(res.checkPassword('bar')).not.to.be.true;
-    })
+    });
+  });
+
+  it('should authorize user', () => {
+    const user = new User({
+      username: 'foo',
+      password: 'bar',
+    });
+    user.save((err, user) => {
+      should.not.exist(err);
+      expect(user.username).to.equal('foo');
+
+      User.authorize('foo', 'bar', (err, res) => {
+        should.not.exist(err);
+        expect(res.username).to.equal('foo');
+      });
+    });
   });
 });

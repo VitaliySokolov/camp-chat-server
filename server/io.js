@@ -3,12 +3,15 @@ const socketioJwt = require('socketio-jwt');
 
 const config = require('./config.js');
 
+const User = require('./models/user');
+const Message = require('./models/message');
+
 const initSocketIO = (io) => {
   io.sockets
     .on('connection', socketioJwt.authorize({
-      secret: config.jwt_secret,
-      callback: false
-    }))
+        secret: config.jwt_secret,
+        callback: false
+      }))
     .on('authenticated', socket => {
       io.emit('join', {
         user: socket.decoded_token,
@@ -27,37 +30,36 @@ const initSocketIO = (io) => {
         }
       }
 
-      function chatMessageHandler(msg, roomId = 0) {
-        // const user = socket.decoded_token; // ???
-        // async.parallel([
-        //   cb => User.findOne(socket.decoded_token, cb),
-        //   cb => Room.findOne(roomId, cb)
-        // ], cb => true)
+      function chatMessageHandler(msg) {
+        const user = socket.decoded_token
         const msgObj = {
-          msg,
-          user: socket.decoded_token,
-          time: Date.now()
+          text: msg,
+          author: user.id,
+          room: 0,
+          sentAt: +(new Date),
         }
-        // const message = new Message(msgObj);
-        // message.save((err, message) => {
-        //   if (err) {
-        //     io.emit('error', err);
-        //   } else {
-        //     io.emit('message', message);
-        //   }
-        // });
-        mongoConnected.then(db => {
-          db
-            .collection('messages')
-            .insert(msgObj, (err, results) => {
+        const message = new Message(msgObj);
+        message.save((err, message) => {
+          if (err) {
+            io.emit('error', err);
+          } else {
+            User.findById(message.author, (err, user) => {
               if (err) {
-                io.emit('error', err)
-              } else {
-                const msgInDb = results.ops[0];
-                io.emit('message', msgInDb);
+                return console.error(err);
               }
-            })
-        })
+              const msg = {
+                id: message.id,
+                msg: message.text,
+                time: +message.sentAt,
+                user: {
+                  id: user.id,
+                  username: user.username
+                }
+              };
+              io.emit('message', msg);
+            });
+          }
+        });
       }
 
       function disconnectHandler() {

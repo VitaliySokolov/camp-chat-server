@@ -1,5 +1,7 @@
 var mongoose = require('mongoose');
 
+const ObjectId = mongoose.Schema.Types.ObjectId;
+
 const messageSchema = mongoose.Schema({
   text: {
     type: String,
@@ -9,11 +11,6 @@ const messageSchema = mongoose.Schema({
     type: ObjectId,
     ref: 'User',
     required: true
-  },
-  room: {
-    type: ObjectId,
-    ref: 'Room',
-    defaul: 0
   },
   sentAt: {
     type: Date,

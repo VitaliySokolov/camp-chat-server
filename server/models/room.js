@@ -1,5 +1,7 @@
 var mongoose = require('mongoose');
 
+const ObjectId = mongoose.Schema.Types.ObjectId;
+
 const roomSchema = mongoose.Schema({
   title: {
     type: String,

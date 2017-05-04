@@ -50,6 +50,14 @@ userSchema.methods.checkPassword = function (password) {
 userSchema.statics.authorize = function (
   username, password, callback) {
   const User = this;
+  // console.log(username, password);
+  const handleExistedUser = (user, cb) => {
+    if (user.checkPassword(password)) {
+      cb(null, user)
+    } else {
+      cb('Username or password are incorrect', null)
+    }
+  }
 
   async.waterfall([
     callback => {
@@ -57,25 +65,9 @@ userSchema.statics.authorize = function (
     },
     (user, callback) => {
       if (user) {
-        if (user.checkPassword(password)) {
-          callback(null, user)
-        } else {
-          callback('Error password checking', null)
-        }
+        handleExistedUser(user, callback);
       } else {
-        const user = new User({ username, password });
-
-        user.save(err => {
-          if (err) {
-            if (err.code === 11000) {
-              return res.send({
-                error: `User with username "${username}" already exist`
-              });
-            }
-            return res.send({ error: err.message });
-          }
-          callback(null, user)
-        })
+        callback('User is not register', null)
       }
     }
   ], callback);

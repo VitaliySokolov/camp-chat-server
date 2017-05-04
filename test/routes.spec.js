@@ -6,10 +6,11 @@ const should = chai.should();
 const except = chai.expect;
 // const config = require('../server/config');
 const mongoose = require('mongoose');
+mongoose.Promise = global.Promise;
 
 const app = require('../server/app');
 const User = require('../server/models/user');
-// console.log(app);
+
 chai.use(chaiHttp);
 
 describe('Testing root route', () => {
@@ -26,52 +27,41 @@ describe('Testing root route', () => {
   });
 });
 
-xdescribe('Testing routes', () => {
+describe('Testing routes', () => {
   // User.collection.drop(err => {
   //   console.error(err);
   // });
 
   beforeEach(done => {
-    // console.log(mongoose.connection);
-    mongoose.connection.db
-      .dropCollection('users', (err, res) => {
-        // console.log(mongoose.connection);
-        // console.log(err);
-        User.find({}, (e, v) => console.log(v));
-        // console.error(User.find());
+    const createDefUser = () => {
+      const user = new User({
+        username: 'foo',
+        password: 'bar'
+      });
+      user.save(err => {
         if (err) {
           console.error(err);
-          done();
-          return;
         }
-        const user = new User({
-          username: 'foo',
-          password: 'bar'
-        });
-        user.save(err => {
-          if (err) {
-            console.error(err);
-          }
-          User.find({}, (e, v) => console.log(v))
-          done();
-        });
-      })
-    User.collection.drop()
-      .then(() => {
-      })
-      .catch(err => {
-        done(err)
-      })
-    // mongoose.connection.db.dropCollection('user', cb)
-    done();
+        // User.find({}, (e, v) => console.log(v))
+        done();
+      });
+    };
+
+    User.remove((err) => {
+      if (err) {
+        console.error(err);
+      }
+      createDefUser();
+    });
   });
 
   afterEach(done => {
-    // User.collection.drop().then(() => {
+    // User.remove((err) => {
+    //   if (err) {
+    //     console.error(err);
+    //   }
     //   done();
-    // }).catch(err => {
-    //   done(err);
-    // });
+    // })
     done();
   })
 
@@ -82,7 +72,7 @@ xdescribe('Testing routes', () => {
           should.not.exist(err);
           res.status.should.equal(200);
           res.type.should.equal('application/json');
-          res.body[0].should.have.property('id');
+          res.body[0].should.have.property('_id');
           res.body[0].should.have.property('username', 'foo');
           done();
         });
@@ -90,18 +80,17 @@ xdescribe('Testing routes', () => {
   });
 
   describe('POST /login', () => {
-    xit('should response with a fail message', (done) => {
+    it('should response with a fail message', (done) => {
       chai.request(app)
         .post('/login')
         .end((err, res) => {
           should.exist(err);
-          res.status.should.equal(401);
+          res.status.should.equal(400);
           done();
         });
-      // done();
     });
 
-    xit('should response with a fail message', (done) => {
+    it('should response with a fail message: missing password', (done) => {
       chai.request(app)
         .post('/login')
         .send({
@@ -109,27 +98,85 @@ xdescribe('Testing routes', () => {
         })
         .end((err, res) => {
           should.exist(err);
-          res.status.should.equal(401);
-          res.body.should.have.property('error', 'Please specify login and pass!')
+          res.status.should.equal(400);
+          res.body.should.have.property('error',
+            'Please specify login and pass!')
           done();
         });
     });
 
-    xit('should response with a success message', (done) => {
-      console.error('berore last response');
+    it('should response with `wrong username/password`', (done) => {
       chai.request(app)
         .post('/login')
-        .send({ username: 'foo', pass: 'bar' })
+        .send({
+          username: 'foo',
+          password: 'baz'
+        })
+        .end((err, res) => {
+          should.exist(err);
+          res.status.should.equal(401);
+          res.body.should.have.property('error',
+            'Username or password are incorrect');
+          done()
+        })
+    });
+
+    it('should response with error when user is not register', (done) => {
+      chai.request(app)
+        .post('/login')
+        .send({
+          username: 'fooo',
+          password: 'baz'
+        })
+        .end((err, res) => {
+          should.exist(err);
+          res.status.should.equal(401);
+          res.body.should.have.property('error',
+            'User is not register');
+          done()
+        })
+    });
+
+    it('should response with a success message', (done) => {
+      chai.request(app)
+        .post('/login')
+        .send({ username: 'foo', password: 'bar' })
         .end((err, res) => {
           should.not.exist(err);
           res.type.should.equal('application/json');
-          res.body.should.deep.equal({
-            'username': 'foo'
-          });
+          res.body.should.have.property('token');
+          res.body.should.have.property('tokenType', 'Bearer');
+          res.body.should.have.property('user');
+          res.body.user.should.have.property('username', 'foo');
           done();
         })
     });
   });
+
+  it('should signup new User', (done) => {
+    chai.request(app)
+      .post('/signup')
+      .send({ username: 'bar', password: 'baz' })
+      .end((err, res) => {
+        should.not.exist(err);
+        res.status.should.equal(201);
+        done();
+      });
+  });
+
+  it('should not dublicate user when signup', (done) => {
+    chai.request(app)
+      .post('/signup')
+      .send({ username: 'foo', password: 'baz' })
+      .end((err, res) => {
+        should.exist(err);
+        res.status.should.equal(404);
+        res.body.should.have.property('error',
+          'User with username "foo" already exist');
+        done();
+      })
+
+  })
 
   describe('POST /logout', () => {
     xit('should response with a success message', (done) => {
