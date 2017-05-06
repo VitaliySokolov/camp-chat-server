@@ -7,7 +7,6 @@ const except = chai.expect;
 // const config = require('../server/config');
 const mongoose = require('mongoose');
 mongoose.Promise = global.Promise;
-
 const app = require('../server/app');
 const User = require('../server/models/user');
 
@@ -53,6 +52,7 @@ describe('Testing routes', () => {
 
   describe('GET /users', () => {
     it('should response with user list', (done) => {
+      // console.log(app);
       chai.request(app)
         .get('/users').end((err, res) => {
           should.not.exist(err);

@@ -1,6 +1,5 @@
 module.exports = {
-  port: process.env.PORT || 3001,
-  host: process.env.HOST || 'localhost',
+  port: process.env.PORT || 3000,
   mongoURL: {
     development: process.env.MONGODB_URI || 'mongodb://localhost:27017/camp-chat',
     test: 'mongodb://localhost:27017/node-test',

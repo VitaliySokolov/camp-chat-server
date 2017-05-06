@@ -5,13 +5,12 @@ const should = chai.should();
 const expect = chai.expect;
 const mongoose = require('mongoose');
 mongoose.Promise = global.Promise;
-
 const app = require('../server/app');
 const User = require('../server/models/user');
 
 describe('User model', () => {
   beforeEach(done => {
-    User.remove(() => done());
+    User.remove(() => { done(); });
   });
 
   it('should not validate new User', () => {
@@ -24,7 +23,7 @@ describe('User model', () => {
     expect(fn).to.throw(mongoose.Error, /Path `username` is required/);
   });
 
-  it('create new User', () => {
+  it('create new User', (done) => {
     const user = new User({
       username: 'foo',
       password: 'bar',
@@ -32,10 +31,11 @@ describe('User model', () => {
     user.save((err, res) => {
       should.not.exist(err);
       expect(res.username).to.equal('foo');
+      done();
     })
   });
 
-  it('check password', () => {
+  it('check password', (done) => {
     const user = new User({
       username: 'foo',
       password: 'baz'
@@ -45,10 +45,11 @@ describe('User model', () => {
       expect(res.username).to.equal('foo');
       expect(res.checkPassword('baz')).to.be.true;
       expect(res.checkPassword('bar')).not.to.be.true;
+      done();
     });
   });
 
-  it('should authorize user', () => {
+  it('should authorize user', (done) => {
     const user = new User({
       username: 'foo',
       password: 'bar',
@@ -60,6 +61,7 @@ describe('User model', () => {
       User.authorize('foo', 'bar', (err, res) => {
         should.not.exist(err);
         expect(res.username).to.equal('foo');
+        done();
       });
     });
   });

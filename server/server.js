@@ -1,15 +1,20 @@
-require('dotenv').config();
-const config = require('./config.js');
-
 const app = require('./app');
+const config = require('./config.js');
+app.set('port', config.port);
 const http = require('http').Server(app);
 
 const io = require('socket.io')(http);
 const initSocketIO = require('./io')
 initSocketIO(io);
 
-const server = http.listen(config.port, config.host, () => {
-  console.log(`Auth servise running on http://${server.address().address}:${server.address().port}`)
-})
+const serverPromise = new Promise((resolve, reject) => {
+  const server = http.listen(
+    app.get('port'), () => {
+      console.log(
+        `Chat service running on ${server.address().port}`
+      );
+      resolve(server);
+    });
+});
 
-module.exports = server;
+module.exports = serverPromise;
