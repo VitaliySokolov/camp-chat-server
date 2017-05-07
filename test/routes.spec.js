@@ -8,6 +8,7 @@ const mongoose = require('mongoose');
 mongoose.Promise = global.Promise;
 const app = require('../server/app');
 const User = require('../server/models/user');
+const Message = require('../server/models/message');
 
 chai.use(chaiHttp);
 
@@ -57,7 +58,7 @@ describe('Testing routes', () => {
           should.not.exist(err);
           res.status.should.equal(200);
           res.type.should.equal('application/json');
-          res.body[0].should.have.property('_id');
+          res.body[0].should.have.property('id');
           res.body[0].should.have.property('username', 'foo');
           done();
         });
@@ -159,20 +160,43 @@ describe('Testing routes', () => {
         res.body.should.have.property('error',
           'User with username "foo" already exist');
         done();
-      })
+      });
+  });
 
-  })
+  describe('GET /messages', () => {
+    beforeEach(done => {
+      Message.remove(err => {
+        if (err) {
+          return console.error(err);
+        }
+        User.findOne({ username: 'foo' }, (err, user) => {
+          if (err) {
+            return console.error(err);
+          }
+          const msg = new Message({
+            text: "hello",
+            author: user.id,
+          });
+          msg.save((err, msg) => {
+            done();
+          });
+        });
+      });
+    })
 
-  describe('POST /logout', () => {
-    xit('should response with a success message', (done) => {
+    it('should response with message', (done) => {
       chai.request(app)
-        .post('/logout')
+        .get('/messages')
         .end((err, res) => {
           should.not.exist(err);
-          res.type.should.equal('application/json');
-          res.body.should.deep.equal({ ok: 'ok' });
+          res.body[0].should.have.property('id');
+          res.body[0].should.have.property('msg', 'hello');
+          res.body[0].should.have.property('user');
+          res.body[0].user.should.have.property('id');
+          res.body[0].user.should.have.property('username', 'foo');
           done();
-        });
+        })
     });
   });
+
 });

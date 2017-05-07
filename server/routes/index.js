@@ -65,7 +65,10 @@ router.post('/signup', (req, res) => {
 
 router.get('/users', (req, res) => {
   User.find().select({ 'id': 1, 'username': 1 }).then((users) => {
-    res.send(users)
+    res.send(users.map(user => ({
+      id: user.id,
+      username: user.username,
+    })))
   });
 });
 
@@ -79,7 +82,10 @@ router.get('/messages', (req, res) => {
         id: msg.id,
         msg: msg.text,
         time: +msg.sentAt,
-        user: msg.author
+        user: {
+          id: msg.author.id,
+          username: msg.author.username,
+        }
       }));
       res.send(newMsgs);
     });

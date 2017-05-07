@@ -11,6 +11,9 @@ const serverPromise = require('../server/server');
 const config = require('../server/config');
 const serverURL = `http://localhost:${config.port}`;
 
+const User = require('../server/models/user');
+const Message = require('../server/models/message');
+
 describe('SocketIO connection', () => {
   let client;
   const fooUser = {
@@ -98,43 +101,56 @@ describe('SocketIO connection', () => {
     });
   });
 
-  it('should send message', (done) => {
-    expectedMessage = 'hello world';
-    const User = require('../server/models/user');
-    const user = new User({
-      username: 'bar',
-      password: 'baz'
-    });
-    user.save((err, user) => {
-      if (err) {
-        return console.error(err);
-      }
-      const barUser = {
-        id: user.id,
-        username: user.username
-      };
+  describe('sending message', () => {
 
-      const barToken = jwt.sign(
-        barUser,
-        config.jwt_secret,
-        { noTimestamp: true }
-      );
-
-      client.disconnect()
-      client = io.connect(serverURL, options);
-      client.on("connect", () => {
-
-        client.on('message', (data) => {
-          data['msg'].should.equal(expectedMessage);
+    afterEach((done) => {
+      Message.remove(() => {
+        User.remove(() => {
           done();
-        });
-
-        client.once('join', () => {
-          client.emit('message', expectedMessage);
         })
-
-        client.emit('authenticate', { token: barToken });
-      });
+      })
     });
+
+    it('should send message', (done) => {
+      expectedMessage = 'hello world';
+      const User = require('../server/models/user');
+      const user = new User({
+        username: 'bar',
+        password: 'baz'
+      });
+      user.save((err, user) => {
+        if (err) {
+          return console.error(err);
+        }
+        const barUser = {
+          id: user.id,
+          username: user.username
+        };
+
+        const barToken = jwt.sign(
+          barUser,
+          config.jwt_secret,
+          { noTimestamp: true }
+        );
+
+        client.disconnect()
+        client = io.connect(serverURL, options);
+        client.on("connect", () => {
+
+          client.on('message', (data) => {
+            data['msg'].should.equal(expectedMessage);
+            done();
+          });
+
+          client.once('join', () => {
+            client.emit('message', expectedMessage);
+          })
+
+          client.emit('authenticate', { token: barToken });
+        });
+      });
+
+    });
+
   });
 });
