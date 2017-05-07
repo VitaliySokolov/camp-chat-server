@@ -31,13 +31,13 @@ const initSocketIO = (io) => {
       }
 
       function chatMessageHandler(msg) {
-        const user = socket.decoded_token
+        const user = socket.decoded_token;
         const msgObj = {
           text: msg,
           author: user.id,
           room: 0,
           sentAt: +(new Date),
-        }
+        };
         const message = new Message(msgObj);
         message.save((err, message) => {
           if (err) {
@@ -66,9 +66,9 @@ const initSocketIO = (io) => {
         io.emit('leave', {
           user: socket.decoded_token,
           time: Date.now()
-        })
+        });
       }
-    })
+    });
 }
 
 module.exports = initSocketIO

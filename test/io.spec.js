@@ -14,6 +14,15 @@ const serverURL = `http://localhost:${config.port}`;
 
 describe('SocketIO connection', () => {
   let client;
+  const fooUser = {
+    id: 'fooId',
+    username: "foo"
+  };
+  const token = jwt.sign(
+    fooUser,
+    config.jwt_secret,
+    { noTimestamp: true }
+  );
   const options = {
     transport: ['websocket'],
     'force new connection': true
@@ -30,6 +39,7 @@ describe('SocketIO connection', () => {
       serverURL,
       options);
     client.on("connect", () => {
+      client.emit('authenticate', { token });
       done();
     });
   });
@@ -41,45 +51,91 @@ describe('SocketIO connection', () => {
     done();
   })
 
-  // demo
-  xit('echo msg', (done) => {
-    const client = io.connect(ServerURL, options);
-    // console.log(client);
-    client.once("connect", () => {
-      client.once("echo", (msg) => {
-        msg.should.equal("Hello World");
-        client.disconnect();
+  it('should not authenticate user with wrong token', (done) => {
+    client.disconnect();
+    client = io.connect(serverURL, options);
+    client.on("connect", () => {
+      client.once('unauthorized', () => {
         done();
-      });
-
-      // console.log('before echo');
-      client.emit("echo", "Hello World");
+      })
+      client.emit('authenticate', { token: "wrong token" });
     });
   });
 
-  it('shoutd authenticate user', (done) => {
-    const fakeUser = { username: "foo" };
-    const token = jwt.sign(
-      fakeUser,
+  it('should authenticate user', (done) => {
+    client
+      .once('authenticated', () => {
+        // console.log('auth ok');
+        done();
+      });
+  });
+
+  it('should join chat', (done) => {
+    client.once('join', (data) => {
+      data['user']['username'].should.equal(fooUser.username);
+      done();
+    });
+  });
+
+  it('should leave chat', (done) => {
+    const barUser = { username: "bar" };
+    const barToken = jwt.sign(
+      barUser,
       config.jwt_secret,
       { noTimestamp: true }
     );
-    // console.log(token);
-    client
-      .once('authenticated', () => {
-        console.log('auth ok');
-      })
-      .once('unauthorized', (res) => {
-        console.log('auth not ok');
-        // client.disconnect();
-        done();
-      })
-      .once('join', (res) => {
-        res['user']['username'].should.equal('foo');
-        // client.disconnect();
-        done();
-      });
 
-    client.emit('authenticate', { token });
+    client.once('leave', (data) => {
+      data['user']['username'].should.equal(barUser.username);
+      done();
+    });
+
+    newClient = io.connect(serverURL, options);
+    newClient.on("connect", () => {
+      newClient.once('join', () => {
+        newClient.disconnect();
+      })
+      newClient.emit('authenticate', { token: barToken });
+    });
+  });
+
+  it('should send message', (done) => {
+    expectedMessage = 'hello world';
+    const User = require('../server/models/user');
+    const user = new User({
+      username: 'bar',
+      password: 'baz'
+    });
+    user.save((err, user) => {
+      if (err) {
+        return console.error(err);
+      }
+      const barUser = {
+        id: user.id,
+        username: user.username
+      };
+
+      const barToken = jwt.sign(
+        barUser,
+        config.jwt_secret,
+        { noTimestamp: true }
+      );
+
+      client.disconnect()
+      client = io.connect(serverURL, options);
+      client.on("connect", () => {
+
+        client.on('message', (data) => {
+          data['msg'].should.equal(expectedMessage);
+          done();
+        });
+
+        client.once('join', () => {
+          client.emit('message', expectedMessage);
+        })
+
+        client.emit('authenticate', { token: barToken });
+      });
+    });
   });
 });
