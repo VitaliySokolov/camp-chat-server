@@ -50,7 +50,6 @@ userSchema.methods.checkPassword = function (password) {
 userSchema.statics.authorize = function (
   username, password, callback) {
   const User = this;
-  // console.log(username, password);
   const handleExistedUser = (user, cb) => {
     if (user.checkPassword(password)) {
       cb(null, user)

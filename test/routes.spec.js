@@ -4,7 +4,6 @@ const chai = require('chai');
 const chaiHttp = require('chai-http');
 const should = chai.should();
 const except = chai.expect;
-// const config = require('../server/config');
 const mongoose = require('mongoose');
 mongoose.Promise = global.Promise;
 const app = require('../server/app');

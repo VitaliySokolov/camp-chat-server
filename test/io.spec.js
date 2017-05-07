@@ -6,7 +6,6 @@ const should = chai.should();
 
 const io = require('socket.io-client');
 const jwt = require('jsonwebtoken');
-//const socketioJwt = require('socketio-jwt');
 const serverPromise = require('../server/server');
 
 const config = require('../server/config');
