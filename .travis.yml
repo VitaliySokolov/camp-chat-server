@@ -1,13 +1,14 @@
 language: node_js
-
 node_js:
-  - stable
-
+- stable
 services:
-  - mongodb
-
+- mongodb
 install:
-  - npm install
-
+- npm install
 script:
-  - npm test
+- npm test
+deploy:
+  provider: heroku
+  api_key:
+    secure: lUJO212qieCat8ANeCpT5aK5FmUbl/xjb4HJ/+EzZZMpiZBv6h4v1ty6eqQsWAXNdLvglVrEL+m0pMEBJ/Mr3kD85Dbwa6YT16SpHHvjAkQyKMPwjp17yibbBVG8PhOUJNi2ugmgvPZfRFUn8oIXQ1c+kLPnaAwZ2RZXgNAAmoOVGrK59Oxgic9fQuDwQIic8ZE9+Vs2OJmbxECV9N60ARXioq0DHqXDRCBSZ5UzexdAuemMrVhQaBB8hP9ze8osLRKhgDMLYHWg1vhi1gTAlvikqgyOgxIktVU45Vo7WopoqoSRVOyEFy5qNaM1pQh8toc82jxkcEaTjga77W6N+e1MpjWMFdIgesHtCUVYHaWhEqCb27Kdeq3c6nPWGT/XHN74a+lN+gkTkp4528H0t3WGNKxS1VH4xaSv2/wXWdvLF/HPCyuCF6ChIznQ2v04miK5GknZhiArmiTsHkcMXWHLiC/acSYlNA8Qqu3JiaihKaID4wcduQAfLfF5ItdEa+j1HydsoyE6xdcNxxEpzqFJ0kQd7O0sF5cVj1hyiCUKL76qcQLojYpSim9JWNXvrpbgncg8V9g1lvgQEy565fi/xeGOa6SBX+j4l7Ma9U6+qA76MZ4iYT4pwx1UnLE22fWDOC3agN6+9x7i0lEJ1R/HkqHI/y+7tMDPUClRD7g=
+  app: vs-chat-server
