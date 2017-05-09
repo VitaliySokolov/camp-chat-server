@@ -6,12 +6,15 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const morgan = require('morgan');
 const mongoose = require('mongoose');
+const path = require('path');
 
 const config = require('./config.js');
 const routes = require('./routes');
 mongoose.connect(config.mongoURL[app.settings.env]);
 
-app.use(express.static('public'));
+app.use(express.static(
+  path.resolve(__dirname, '..', 'build')
+));
 app.use(cors());
 app.use(bodyParser.json());
 app.use(morgan('tiny'));

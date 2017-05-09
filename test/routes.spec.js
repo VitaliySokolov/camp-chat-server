@@ -182,6 +182,17 @@ describe('Testing routes', () => {
           });
         });
       });
+    });
+
+    afterEach(done => {
+      Message
+        .remove()
+        .then(() => {
+          done();
+        })
+        .catch(err => {
+          console.error(err);
+        });
     })
 
     it('should response with message', (done) => {

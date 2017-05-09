@@ -50,13 +50,16 @@ router.post('/signup', (req, res) => {
     username: req.body.username,
     password: req.body.password
   });
+  if (req.body.email) {
+    user.email = req.body.email;
+  }
   user.save((err, user) => {
     if (err) {
       let errorMsg = err.message
       if (err.code === 11000) {
         errorMsg = `User with username "${req.body.username}" already exist`;
       }
-      res.status(404).send({ error: errorMsg });
+      res.status(404).json({ error: errorMsg });
     } else {
       res.status(201).send()
     }
@@ -91,13 +94,8 @@ router.get('/messages', (req, res) => {
     });
 })
 
-router.get('/', (req, res, next) => {
-  const readmePath = path.resolve(__dirname, '../../readme.md');
-  fs.readFile(readmePath, 'utf8', (err, data) => {
-    if (err) return next(err)
-
-    res.send(marked(data.toString()))
-  })
+router.get('*', (req, res) => {
+  res.sendFile(path.resolve(__dirname, '..', '..', 'build', 'index.html'));
 })
 
 module.exports = router
