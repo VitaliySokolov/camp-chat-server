@@ -1,5 +1,5 @@
 module.exports = {
-  port: process.env.PORT || 3000,
+  port: (process.env.NODE_ENV === 'test' && process.env.TEST_PORT ) ? process.env.TEST_PORT : process.env.PORT || 3000,
   mongoURL: {
     development: process.env.MONGODB_URI || 'mongodb://localhost:27017/camp-chat',
     test: 'mongodb://localhost:27017/node-test',
