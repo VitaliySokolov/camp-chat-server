@@ -4,7 +4,7 @@ app.set('port', config.port);
 const http = require('http').Server(app);
 
 const io = require('socket.io')(http);
-const initSocketIO = require('./io')
+const initSocketIO = require('./sockets')
 initSocketIO(io);
 
 const serverPromise = new Promise((resolve, reject) => {

@@ -1,17 +1,17 @@
 const jwt = require('jsonwebtoken');
 const socketioJwt = require('socketio-jwt');
 
-const config = require('./config.js');
+const config = require('../config.js');
 
-const User = require('./models/user');
-const Message = require('./models/message');
+const User = require('../models/user');
+const Message = require('../models/message');
 
 const initSocketIO = (io) => {
   io.sockets
     .on('connection', socketioJwt.authorize({
-        secret: config.jwt_secret,
-        callback: false
-      }))
+      secret: config.jwt_secret,
+      callback: false
+    }))
     .on('authenticated', socket => {
       io.emit('join', {
         user: socket.decoded_token,
@@ -22,12 +22,37 @@ const initSocketIO = (io) => {
         .on('unauthorized', unauthorizedHandler)
         .on('message', chatMessageHandler)
         .on('disconnect', disconnectHandler)
+        .on('get messages', chatGetMessagesHandler)
 
       function unauthorizedHandler(error) {
         if (error.data.type == 'UnauthorizedError' || error.data.code == 'invalid_token') {
           // redirect user to login page perhaps?
           console.log("User's token has expired");
         }
+      }
+
+      function chatGetMessagesHandler(filter) {
+        if (!filter) {
+          filter = {days: 1}
+        }
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - filter.days);
+        Message
+          .find({sentAt: {$gte: cutoff}})
+          .populate('author', 'username')
+          .select({ 'id': 1, 'text': 1, 'author': 1, 'sentAt': 1, 'editedAt': 1 })
+          .then((msgs) => {
+            const newMsgs = msgs.map(msg => ({
+              id: msg.id,
+              msg: msg.text,
+              time: +msg.sentAt,
+              user: {
+                id: msg.author.id,
+                username: msg.author.username,
+              }
+            }));
+            socket.emit('messages', newMsgs);
+          });
       }
 
       function chatMessageHandler(msg) {

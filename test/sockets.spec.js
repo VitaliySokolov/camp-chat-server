@@ -11,6 +11,8 @@ const serverPromise = require('../server/server');
 const config = require('../server/config');
 const serverURL = `http://localhost:${config.port}`;
 
+const mongoose = require('mongoose');
+mongoose.Promise = global.Promise;
 const User = require('../server/models/user');
 const Message = require('../server/models/message');
 
@@ -101,14 +103,15 @@ describe('SocketIO connection', () => {
     });
   });
 
-  describe('sending message', () => {
+  describe('`messages`', () => {
 
     afterEach((done) => {
-      Message.remove(() => {
-        User.remove(() => {
-          done();
-        })
-      })
+      Promise
+        .all([
+          Message.remove(),
+          User.remove()
+        ])
+        .then(() => done())
     });
 
     it('should send message', (done) => {
@@ -138,7 +141,7 @@ describe('SocketIO connection', () => {
         client.on("connect", () => {
 
           client.on('message', (data) => {
-            data['msg'].should.equal(expectedMessage);
+            data.msg.should.equal(expectedMessage);
             done();
           });
 
@@ -150,6 +153,111 @@ describe('SocketIO connection', () => {
         });
       });
 
+    });
+
+    it('should receive empty array of messages', done => {
+      client.on('messages', data => {
+        data.should.deep.equal([])
+        done();
+      });
+      Promise
+        .all([
+          Message.remove(),
+        ])
+        .then(() => client.emit('get messages'));
+    });
+
+    it('should receive one message', done => {
+      expectedAuthor = 'bar';
+      expectedMessage = 'hello foo';
+      client.on('messages', data => {
+        data[0].msg.should.equal(expectedMessage)
+        data[0].user.username.should.equal(expectedAuthor)
+        done();
+      });
+
+      const saveMessage = (user, msgText) => {
+        new Message({
+          text: msgText,
+          author: user.id
+        })
+          .save()
+          .then(msg => {
+            client.emit('get messages')
+          })
+          .catch(err => console.error(err));
+      }
+
+      new User({
+        username: expectedAuthor,
+        password: 'baz'
+      })
+        .save()
+        .then(user => saveMessage(user, expectedMessage))
+        .catch(err => console.error(err));
+    });
+
+    it('should not receive too old messages', done => {
+      expectedAuthor = 'bar';
+      expectedMessage = 'hello foo';
+      client.on('messages', data => {
+        data.should.deep.equal([])
+        done();
+      });
+
+      const saveMessage = (user, msgText) => {
+        let d = new Date();
+        new Message({
+          text: msgText,
+          author: user.id,
+          sentAt: d.setDate(d.getDate() - 2)
+        })
+          .save()
+          .then(msg => {
+            client.emit('get messages')
+          })
+          .catch(err => console.error(err));
+      }
+
+      new User({
+        username: expectedAuthor,
+        password: 'baz'
+      })
+        .save()
+        .then(user => saveMessage(user, expectedMessage))
+        .catch(err => console.error(err));
+    });
+
+    it('should receive too old messages when request them', done => {
+      expectedAuthor = 'bar';
+      expectedMessage = 'hello foo';
+      client.on('messages', data => {
+        data[0].msg.should.equal(expectedMessage)
+        data[0].user.username.should.equal(expectedAuthor)
+        done();
+      });
+
+      const saveMessage = (user, msgText) => {
+        let d = new Date();
+        new Message({
+          text: msgText,
+          author: user.id,
+          sentAt: d.setDate(d.getDate() - 2)
+        })
+          .save()
+          .then(msg => {
+            client.emit('get messages', { days: 3 })
+          })
+          .catch(err => console.error(err));
+      }
+
+      new User({
+        username: expectedAuthor,
+        password: 'baz'
+      })
+        .save()
+        .then(user => saveMessage(user, expectedMessage))
+        .catch(err => console.error(err));
     });
 
   });
