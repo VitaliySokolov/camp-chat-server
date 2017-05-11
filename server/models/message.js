@@ -15,6 +15,9 @@ const messageSchema = mongoose.Schema({
   sentAt: {
     type: Date,
     default: new Date
+  },
+  editedAt: {
+    type: Date,
   }
 });
 

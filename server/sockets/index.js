@@ -23,6 +23,7 @@ const initSocketIO = (io) => {
         .on('message', chatMessageHandler)
         .on('disconnect', disconnectHandler)
         .on('get messages', chatGetMessagesHandler)
+        .on('put message', chatPutMessageHandler)
 
       function unauthorizedHandler(error) {
         if (error.data.type == 'UnauthorizedError' || error.data.code == 'invalid_token') {
@@ -31,18 +32,50 @@ const initSocketIO = (io) => {
         }
       }
 
-      function chatGetMessagesHandler(filter) {
-        if (!filter) {
-          filter = {days: 1}
-        }
-        const cutoff = new Date();
-        cutoff.setDate(cutoff.getDate() - filter.days);
+      function chatPutMessageHandler(message) {
+        const user = socket.decoded_token;
         Message
-          .find({sentAt: {$gte: cutoff}})
+          .findById(message.id)
+          .then(msg => {
+            // console.log(msg.author.toString() === user.id);
+            if (msg.author.toString() !== user.id &&
+              user['role'] !== 'admin') {
+              socket.emit('error', 'no permission to edit msg')
+              return;
+            }
+            const newMsg = new Message(message);
+            msg.text = message.msg;
+            // msg['editedAt'] = new Date();
+            msg
+              .save()
+              .then(msg => {
+                // console.log('new:', msg);
+                socket.emit('message', {
+                  id: msg.id,
+                  msg: msg.text,
+                  time: msg.sentAt,
+                  user: {
+                    id: msg.author,
+                  }
+                })
+              })
+              .catch(err => socket.emit('error', err));
+          })
+          .catch(err => socket.emit('error', err));
+      }
+
+      function chatGetMessagesHandler(filter) {
+        const cutoff = filter && filter.cutoff || new Date();
+        const limitCount = filter && filter.limitCount || 10;
+        // cutoff.setDate(cutoff.getDate() - filter.days);
+        Message
+          .find({ sentAt: { $lt: cutoff } })
+          .limit(limitCount)
+          .sort({ sentAt: -1 })
           .populate('author', 'username')
           .select({ 'id': 1, 'text': 1, 'author': 1, 'sentAt': 1, 'editedAt': 1 })
           .then((msgs) => {
-            const newMsgs = msgs.map(msg => ({
+            const items = msgs.map(msg => ({
               id: msg.id,
               msg: msg.text,
               time: +msg.sentAt,
@@ -51,7 +84,7 @@ const initSocketIO = (io) => {
                 username: msg.author.username,
               }
             }));
-            socket.emit('messages', newMsgs);
+            socket.emit('messages', items);
           });
       }
 

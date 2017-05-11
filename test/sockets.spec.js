@@ -197,7 +197,7 @@ describe('SocketIO connection', () => {
         .catch(err => console.error(err));
     });
 
-    it('should not receive too old messages', done => {
+    it('should not receive newer than cutoff', done => {
       expectedAuthor = 'bar';
       expectedMessage = 'hello foo';
       client.on('messages', data => {
@@ -214,7 +214,8 @@ describe('SocketIO connection', () => {
         })
           .save()
           .then(msg => {
-            client.emit('get messages')
+            client.emit('get messages',
+              { cutoff: d.setDate(d.getDate() - 2) })
           })
           .catch(err => console.error(err));
       }
@@ -246,7 +247,8 @@ describe('SocketIO connection', () => {
         })
           .save()
           .then(msg => {
-            client.emit('get messages', { days: 3 })
+            client.emit('get messages',
+              { cutoff: d.setDate(d.getDate() + 2) })
           })
           .catch(err => console.error(err));
       }
@@ -257,6 +259,61 @@ describe('SocketIO connection', () => {
       })
         .save()
         .then(user => saveMessage(user, expectedMessage))
+        .catch(err => console.error(err));
+    });
+
+    it('should edit message', done => {
+      expectedAuthor = 'bar';
+      initialMessage = 'hi foo';
+      expectedMessage = 'hello foo';
+
+      const saveMessage = (user, msgText, client) => {
+        new Message({
+          text: msgText,
+          author: user,
+        })
+          .save()
+          .then(msg => {
+            client.emit('put message',
+              { id: msg.id, msg: expectedMessage })
+          })
+          .catch(err => console.error(err));
+      }
+
+      new User({
+        username: expectedAuthor,
+        password: 'baz'
+      })
+        .save()
+        .then(user => {
+          const barUser = {
+            id: user.id,
+            username: user.username
+          };
+
+          const barToken = jwt.sign(
+            barUser,
+            config.jwt_secret,
+            { noTimestamp: true }
+          );
+
+          client.disconnect()
+          client = io.connect(serverURL, options);
+          client.on("connect", () => {
+
+            client.on('message', data => {
+              data.msg.should.equal(expectedMessage)
+              // data.user.username.should.equal(expectedAuthor)
+              done();
+            });
+
+            client.once('join', () => {
+              saveMessage(user, initialMessage, client);
+            })
+
+            client.emit('authenticate', { token: barToken });
+          })
+        })
         .catch(err => console.error(err));
     });
 
