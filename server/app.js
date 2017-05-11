@@ -6,6 +6,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const morgan = require('morgan');
 const mongoose = require('mongoose');
+mongoose.Promise = global.Promise;
 const path = require('path');
 
 const config = require('./config.js');

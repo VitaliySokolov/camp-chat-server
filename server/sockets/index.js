@@ -24,6 +24,7 @@ const initSocketIO = (io) => {
         .on('disconnect', disconnectHandler)
         .on('get messages', chatGetMessagesHandler)
         .on('put message', chatPutMessageHandler)
+        .on('delete message', chatDeleteMessageHandler)
 
       function unauthorizedHandler(error) {
         if (error.data.type == 'UnauthorizedError' || error.data.code == 'invalid_token') {
@@ -32,10 +33,38 @@ const initSocketIO = (io) => {
         }
       }
 
-      function chatPutMessageHandler(message) {
+      function chatDeleteMessageHandler({ msgId }) {
         const user = socket.decoded_token;
         Message
-          .findById(message.id)
+          .findById(msgId)
+          .then(msg => {
+            // console.log(msg.author.toString() === user.id);
+            if (msg.author.toString() !== user.id &&
+              user['role'] !== 'admin') {
+              return new Error('no premission');
+            } else {
+              return msg.id
+            }
+          })
+          .then(id => {
+            Message
+              .remove({ _id: id })
+              .then(() => {
+                io.emit('message_deleted', { id })
+              })
+              .catch(err => {
+                socket.emit('error', err);
+              });
+          })
+          .catch(err => {
+            socket.emit('error', err)
+          });
+      }
+
+      function chatPutMessageHandler({ msgId, msgText }) {
+        const user = socket.decoded_token;
+        Message
+          .findById(msgId)
           .then(msg => {
             // console.log(msg.author.toString() === user.id);
             if (msg.author.toString() !== user.id &&
@@ -43,20 +72,15 @@ const initSocketIO = (io) => {
               socket.emit('error', 'no permission to edit msg')
               return;
             }
-            const newMsg = new Message(message);
-            msg.text = message.msg;
+            msg.text = msgText;
             // msg['editedAt'] = new Date();
             msg
               .save()
               .then(msg => {
                 // console.log('new:', msg);
-                socket.emit('message', {
+                io.emit('message_changed', {
                   id: msg.id,
-                  msg: msg.text,
-                  time: msg.sentAt,
-                  user: {
-                    id: msg.author,
-                  }
+                  text: msg.text,
                 })
               })
               .catch(err => socket.emit('error', err));

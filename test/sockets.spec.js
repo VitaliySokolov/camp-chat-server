@@ -115,7 +115,7 @@ describe('SocketIO connection', () => {
     });
 
     it('should send message', (done) => {
-      expectedMessage = 'hello world';
+      const expectedMessage = 'hello world';
       const User = require('../server/models/user');
       const user = new User({
         username: 'bar',
@@ -168,8 +168,8 @@ describe('SocketIO connection', () => {
     });
 
     it('should receive one message', done => {
-      expectedAuthor = 'bar';
-      expectedMessage = 'hello foo';
+      const expectedAuthor = 'bar';
+      const expectedMessage = 'hello foo';
       client.on('messages', data => {
         data[0].msg.should.equal(expectedMessage)
         data[0].user.username.should.equal(expectedAuthor)
@@ -198,8 +198,8 @@ describe('SocketIO connection', () => {
     });
 
     it('should not receive newer than cutoff', done => {
-      expectedAuthor = 'bar';
-      expectedMessage = 'hello foo';
+      const expectedAuthor = 'bar';
+      const expectedMessage = 'hello foo';
       client.on('messages', data => {
         data.should.deep.equal([])
         done();
@@ -230,8 +230,8 @@ describe('SocketIO connection', () => {
     });
 
     it('should receive too old messages when request them', done => {
-      expectedAuthor = 'bar';
-      expectedMessage = 'hello foo';
+      const expectedAuthor = 'bar';
+      const expectedMessage = 'hello foo';
       client.on('messages', data => {
         data[0].msg.should.equal(expectedMessage)
         data[0].user.username.should.equal(expectedAuthor)
@@ -263,9 +263,9 @@ describe('SocketIO connection', () => {
     });
 
     it('should edit message', done => {
-      expectedAuthor = 'bar';
-      initialMessage = 'hi foo';
-      expectedMessage = 'hello foo';
+      const expectedAuthor = 'bar';
+      const initialMessage = 'hi foo';
+      const expectedMessage = 'hello foo';
 
       const saveMessage = (user, msgText, client) => {
         new Message({
@@ -275,7 +275,7 @@ describe('SocketIO connection', () => {
           .save()
           .then(msg => {
             client.emit('put message',
-              { id: msg.id, msg: expectedMessage })
+              { msgId: msg.id, msgText: expectedMessage })
           })
           .catch(err => console.error(err));
       }
@@ -301,8 +301,64 @@ describe('SocketIO connection', () => {
           client = io.connect(serverURL, options);
           client.on("connect", () => {
 
-            client.on('message', data => {
-              data.msg.should.equal(expectedMessage)
+            client.on('message_changed', data => {
+              data.text.should.equal(expectedMessage)
+              // data.user.username.should.equal(expectedAuthor)
+              done();
+            });
+
+            client.once('join', () => {
+              saveMessage(user, initialMessage, client);
+            })
+
+            client.emit('authenticate', { token: barToken });
+          })
+        })
+        .catch(err => console.error(err));
+    });
+
+    it('should delete message', done => {
+      const expectedAuthor = 'bar';
+      const initialMessage = 'hi foo';
+      let expectedId;
+
+      const saveMessage = (user, msgText, client) => {
+        new Message({
+          text: msgText,
+          author: user,
+        })
+          .save()
+          .then(msg => {
+            expectedId = msg.id;
+            client.emit('delete message',
+              { msgId: msg.id })
+          })
+          .catch(err => console.error(err));
+      }
+
+      new User({
+        username: expectedAuthor,
+        password: 'baz'
+      })
+        .save()
+        .then(user => {
+          const barUser = {
+            id: user.id,
+            username: user.username
+          };
+
+          const barToken = jwt.sign(
+            barUser,
+            config.jwt_secret,
+            { noTimestamp: true }
+          );
+
+          client.disconnect()
+          client = io.connect(serverURL, options);
+          client.on("connect", () => {
+
+            client.on('message_deleted', data => {
+              data.id.should.equal(expectedId)
               // data.user.username.should.equal(expectedAuthor)
               done();
             });
