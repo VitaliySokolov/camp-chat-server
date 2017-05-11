@@ -16,21 +16,63 @@ mongoose.Promise = global.Promise;
 const User = require('../server/models/user');
 const Message = require('../server/models/message');
 
+const socketOptions = {
+  transport: ['websocket'],
+  'force new connection': true
+};
+
+const createUser = (userName, userPass) => {
+  return User
+    .remove({ username: userName })
+    .then(() => {
+      return new User({
+        username: userName,
+        password: userPass
+      })
+        .save();
+    })
+};
+
+// const connectUser = (userName, userPass) => {
+//   return new Promise((resolve, reject) => {
+//     createUser(userName, userPass)
+//       .then(user => {
+//         const userObj = {
+//           id: user.id,
+//           username: user.username
+//         };
+//         const token = jwt.sign(
+//           userObj,
+//           config.jwt_secret,
+//           { noTimestamp: true }
+//         );
+
+//         client = io.connect(
+//           serverURL,
+//           socketOptions);
+//         client.on("connect", () => {
+//           client.emit('authenticate', { token });
+//           resolve(user, client)
+//         });
+//       });
+//   })
+// }
+
+const createMessage = (user, msgText, daysAgo) => {
+  if (!daysAgo) {
+    daysAgo = 0
+  }
+  let d = new Date();
+  return new Message({
+    text: msgText,
+    author: user.id,
+    sentAt: d.setDate(d.getDate() - daysAgo)
+  })
+    .save()
+}
+
 describe('SocketIO connection', () => {
-  let client;
-  const fooUser = {
-    id: 'fooId',
-    username: "foo"
-  };
-  const token = jwt.sign(
-    fooUser,
-    config.jwt_secret,
-    { noTimestamp: true }
-  );
-  const options = {
-    transport: ['websocket'],
-    'force new connection': true
-  };
+  let client, fooUser;
 
   before(done => {
     serverPromise.then(server => {
@@ -39,30 +81,46 @@ describe('SocketIO connection', () => {
   });
 
   beforeEach(done => {
-    client = io.connect(
-      serverURL,
-      options);
-    client.on("connect", () => {
-      client.emit('authenticate', { token });
-      done();
-    });
+    createUser('foo', 'bar')
+      .then(user => {
+        fooUser = user;
+        const userObj = {
+          id: user.id,
+          username: user.username
+        };
+        const token = jwt.sign(
+          userObj,
+          config.jwt_secret,
+          { noTimestamp: true }
+        );
+
+        client = io.connect(
+          serverURL,
+          socketOptions);
+        client.on("connect", () => {
+          client.emit('authenticate', { token });
+          done();
+        });
+      });
   });
 
   afterEach(done => {
     if (client.connected) {
       client.disconnect();
     }
-    done();
+    User.remove().then(() => {
+      done();
+    })
   })
 
   it('should not authenticate user with wrong token', (done) => {
-    client.disconnect();
-    client = io.connect(serverURL, options);
-    client.on("connect", () => {
-      client.once('unauthorized', () => {
+    // client.disconnect();
+    const client2 = io.connect(serverURL, socketOptions);
+    client2.on("connect", () => {
+      client2.once('unauthorized', () => {
         done();
       })
-      client.emit('authenticate', { token: "wrong token" });
+      client2.emit('authenticate', { token: "wrong token" });
     });
   });
 
@@ -94,7 +152,7 @@ describe('SocketIO connection', () => {
       done();
     });
 
-    newClient = io.connect(serverURL, options);
+    newClient = io.connect(serverURL, socketOptions);
     newClient.on("connect", () => {
       newClient.once('join', () => {
         newClient.disconnect();
@@ -116,43 +174,13 @@ describe('SocketIO connection', () => {
 
     it('should send message', (done) => {
       const expectedMessage = 'hello world';
-      const User = require('../server/models/user');
-      const user = new User({
-        username: 'bar',
-        password: 'baz'
+      client.on('message', (data) => {
+        data.msg.should.equal(expectedMessage);
+        done();
       });
-      user.save((err, user) => {
-        if (err) {
-          return console.error(err);
-        }
-        const barUser = {
-          id: user.id,
-          username: user.username
-        };
-
-        const barToken = jwt.sign(
-          barUser,
-          config.jwt_secret,
-          { noTimestamp: true }
-        );
-
-        client.disconnect()
-        client = io.connect(serverURL, options);
-        client.on("connect", () => {
-
-          client.on('message', (data) => {
-            data.msg.should.equal(expectedMessage);
-            done();
-          });
-
-          client.once('join', () => {
-            client.emit('message', expectedMessage);
-          })
-
-          client.emit('authenticate', { token: barToken });
-        });
-      });
-
+      client.once('join', () => {
+        client.emit('message', expectedMessage);
+      })
     });
 
     it('should receive empty array of messages', done => {
@@ -160,217 +188,89 @@ describe('SocketIO connection', () => {
         data.should.deep.equal([])
         done();
       });
-      Promise
-        .all([
-          Message.remove(),
-        ])
+      Message
+        .remove()
         .then(() => client.emit('get messages'));
     });
 
     it('should receive one message', done => {
-      const expectedAuthor = 'bar';
+      const expectedAuthor = fooUser.username;
       const expectedMessage = 'hello foo';
       client.on('messages', data => {
         data[0].msg.should.equal(expectedMessage)
         data[0].user.username.should.equal(expectedAuthor)
         done();
       });
-
-      const saveMessage = (user, msgText) => {
-        new Message({
-          text: msgText,
-          author: user.id
-        })
-          .save()
-          .then(msg => {
-            client.emit('get messages')
-          })
-          .catch(err => console.error(err));
-      }
-
-      new User({
-        username: expectedAuthor,
-        password: 'baz'
-      })
-        .save()
-        .then(user => saveMessage(user, expectedMessage))
-        .catch(err => console.error(err));
+      createMessage(fooUser, expectedMessage)
+        .then(() => client.emit('get messages'))
     });
 
     it('should not receive newer than cutoff', done => {
-      const expectedAuthor = 'bar';
+      const expectedAuthor = fooUser;
       const expectedMessage = 'hello foo';
       client.on('messages', data => {
         data.should.deep.equal([])
         done();
       });
-
-      const saveMessage = (user, msgText) => {
-        let d = new Date();
-        new Message({
-          text: msgText,
-          author: user.id,
-          sentAt: d.setDate(d.getDate() - 2)
-        })
-          .save()
-          .then(msg => {
-            client.emit('get messages',
-              { cutoff: d.setDate(d.getDate() - 2) })
-          })
-          .catch(err => console.error(err));
-      }
-
-      new User({
-        username: expectedAuthor,
-        password: 'baz'
-      })
-        .save()
-        .then(user => saveMessage(user, expectedMessage))
-        .catch(err => console.error(err));
+      createMessage(fooUser, expectedMessage, 2)
+        .then(() => {
+          let d = new Date();
+          client.emit('get messages',
+            { cutoff: d.setDate(d.getDate() - 3) })
+        });
     });
 
     it('should receive too old messages when request them', done => {
-      const expectedAuthor = 'bar';
+      const expectedAuthor = fooUser.username;
       const expectedMessage = 'hello foo';
       client.on('messages', data => {
         data[0].msg.should.equal(expectedMessage)
         data[0].user.username.should.equal(expectedAuthor)
         done();
       });
-
-      const saveMessage = (user, msgText) => {
-        let d = new Date();
-        new Message({
-          text: msgText,
-          author: user.id,
-          sentAt: d.setDate(d.getDate() - 2)
-        })
-          .save()
-          .then(msg => {
-            client.emit('get messages',
-              { cutoff: d.setDate(d.getDate() + 2) })
-          })
-          .catch(err => console.error(err));
-      }
-
-      new User({
-        username: expectedAuthor,
-        password: 'baz'
-      })
-        .save()
-        .then(user => saveMessage(user, expectedMessage))
-        .catch(err => console.error(err));
+      createMessage(fooUser, expectedMessage, 2)
+        .then(() => {
+          let d = new Date();
+          client.emit('get messages',
+            { cutoff: d.setDate(d.getDate() - 1) })
+        });
     });
 
     it('should edit message', done => {
-      const expectedAuthor = 'bar';
       const initialMessage = 'hi foo';
       const expectedMessage = 'hello foo';
+      let expectedMessageId;
 
-      const saveMessage = (user, msgText, client) => {
-        new Message({
-          text: msgText,
-          author: user,
-        })
-          .save()
-          .then(msg => {
-            client.emit('put message',
-              { msgId: msg.id, msgText: expectedMessage })
-          })
-          .catch(err => console.error(err));
-      }
+      client.on('message_changed', data => {
+        data.id.should.equal(expectedMessageId);
+        data.text.should.equal(expectedMessage);
+        done();
+      });
 
-      new User({
-        username: expectedAuthor,
-        password: 'baz'
-      })
-        .save()
-        .then(user => {
-          const barUser = {
-            id: user.id,
-            username: user.username
-          };
-
-          const barToken = jwt.sign(
-            barUser,
-            config.jwt_secret,
-            { noTimestamp: true }
-          );
-
-          client.disconnect()
-          client = io.connect(serverURL, options);
-          client.on("connect", () => {
-
-            client.on('message_changed', data => {
-              data.text.should.equal(expectedMessage)
-              // data.user.username.should.equal(expectedAuthor)
-              done();
-            });
-
-            client.once('join', () => {
-              saveMessage(user, initialMessage, client);
-            })
-
-            client.emit('authenticate', { token: barToken });
-          })
-        })
-        .catch(err => console.error(err));
+      createMessage(fooUser, initialMessage)
+        .then(msg => {
+          msg.text.should.equal(initialMessage);
+          expectedMessageId = msg.id;
+          client.emit('put message',
+            { msgId: msg.id, msgText: expectedMessage })
+        });
     });
 
     it('should delete message', done => {
-      const expectedAuthor = 'bar';
       const initialMessage = 'hi foo';
-      let expectedId;
+      let expectedMessageId;
 
-      const saveMessage = (user, msgText, client) => {
-        new Message({
-          text: msgText,
-          author: user,
-        })
-          .save()
-          .then(msg => {
-            expectedId = msg.id;
-            client.emit('delete message',
-              { msgId: msg.id })
-          })
-          .catch(err => console.error(err));
-      }
+      client.on('message_deleted', data => {
+        data.id.should.equal(expectedMessageId)
+        done();
+      });
 
-      new User({
-        username: expectedAuthor,
-        password: 'baz'
-      })
-        .save()
-        .then(user => {
-          const barUser = {
-            id: user.id,
-            username: user.username
-          };
-
-          const barToken = jwt.sign(
-            barUser,
-            config.jwt_secret,
-            { noTimestamp: true }
-          );
-
-          client.disconnect()
-          client = io.connect(serverURL, options);
-          client.on("connect", () => {
-
-            client.on('message_deleted', data => {
-              data.id.should.equal(expectedId)
-              // data.user.username.should.equal(expectedAuthor)
-              done();
-            });
-
-            client.once('join', () => {
-              saveMessage(user, initialMessage, client);
-            })
-
-            client.emit('authenticate', { token: barToken });
-          })
-        })
-        .catch(err => console.error(err));
+      createMessage(fooUser, initialMessage)
+        .then(msg => {
+          expectedMessageId = msg.id;
+          client.emit('delete message',
+            { msgId: msg.id })
+        });
     });
 
   });
