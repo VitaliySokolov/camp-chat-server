@@ -16,7 +16,11 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  created: {
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  editedAt: {
     type: Date,
     default: Date.now
   },
@@ -25,8 +29,41 @@ const userSchema = new mongoose.Schema({
   },
   avatar: {
     type: String,
+  },
+  role: {
+    type: String,
+    default: 'user'
   }
 });
+
+// userSchema.pre('save', function(next) {
+//   now = new Date();
+//   // console.log(this);
+//   if (!this.createdAt) {
+//     this.createdAt = now;
+//   }
+//   next();
+// });
+
+// userSchema.pre('update', function(next) {
+//   now = new Date();
+//   console.log('update');
+//   console.log(now);
+//   if (!this.editedAt) {
+//     this.editedAt = now;
+//   }
+//   next();
+// });
+
+// userSchema.pre('findByIdAndUpdate', function(next) {
+//   now = new Date();
+//   console.log('updatebyid');
+//   console.log(now);
+//   if (!this.editedAt) {
+//     this.editedAt = now;
+//   }
+//   next();
+// });
 
 userSchema.methods.encryptPassword = function (password) {
   return crypto

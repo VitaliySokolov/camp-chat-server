@@ -5,6 +5,7 @@ const app = express();
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const morgan = require('morgan');
+const expressValidator = require('express-validator');
 const mongoose = require('mongoose');
 mongoose.Promise = global.Promise;
 const path = require('path');
@@ -18,6 +19,8 @@ app.use(express.static(
 ));
 app.use(cors());
 app.use(bodyParser.json());
+app.use(expressValidator());
+
 app.use(morgan('tiny'));
 app.use(routes);
 

@@ -25,44 +25,64 @@ router.post('/login', (req, res) => {
     }
   };
 
-  if (!req.body.username || !req.body.password) {
-    res.status(400)
-      .json({
-        error: 'Please specify login and pass!'
-      })
-  } else {
+  req.checkBody('username', 'Invalid username')
+    .notEmpty()
+    .matches(/^[a-z0-9_]+$/i);
+  req.checkBody('password', 'Invalid password')
+    .notEmpty()
+    .isAscii();
+  req.getValidationResult().then(result => {
+    if (!result.isEmpty()) {
+      res.status(400)
+        .json({
+          error: 'Please specify login and pass!'
+        });
+      return;
+    }
     User.authorize(
       req.body.username,
       req.body.password,
       handleLoginResponse
     );
-  }
+  })
 });
 
 router.post('/signup', (req, res) => {
-  if (!req.body.username || !req.body.password) {
-    res.status(400).json({
-      status: 400,
-      message: 'Please provide valid username and password.'
-    })
-  }
-  const user = new User({
-    username: req.body.username,
-    password: req.body.password
-  });
-  if (req.body.email) {
-    user.email = req.body.email;
-  }
-  user.save((err, user) => {
-    if (err) {
-      let errorMsg = err.message
-      if (err.code === 11000) {
-        errorMsg = `User with username "${req.body.username}" already exist`;
-      }
-      res.status(404).json({ error: errorMsg });
-    } else {
-      res.status(201).send()
+  req.checkBody('username', 'Invalid username')
+    .notEmpty()
+    .matches(/^[a-z0-9_]+$/i);
+  req.checkBody('email', 'Invalid email')
+    .optional()
+    .isEmail();
+  req.checkBody('password', 'Invalid password')
+    .notEmpty()
+    .isAscii();
+  req.getValidationResult().then(result => {
+    if (!result.isEmpty()) {
+      res.status(400)
+        .json({
+          error: 'Please provide valid username and password.'
+        });
+      return;
     }
+    const user = new User({
+      username: req.body.username,
+      password: req.body.password
+    });
+    if (req.body.email) {
+      user.email = req.body.email;
+    }
+    user.save((err, user) => {
+      if (err) {
+        let errorMsg = err.message
+        if (err.code === 11000) {
+          errorMsg = `User with username "${req.body.username}" already exist`;
+        }
+        res.status(404).json({ error: errorMsg });
+      } else {
+        res.status(201).send()
+      }
+    });
   });
 });
 

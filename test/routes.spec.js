@@ -91,6 +91,22 @@ describe('Testing routes', () => {
         });
     });
 
+    it('should response with a fail message when invalid username', (done) => {
+      chai.request(app)
+        .post('/login')
+        .send({
+          username: 'fo o',
+          password: 'baz'
+        })
+        .end((err, res) => {
+          should.exist(err);
+          res.status.should.equal(400);
+          res.body.should.have.property('error',
+            'Please specify login and pass!')
+          done();
+        });
+    });
+
     it('should response with `wrong username/password`', (done) => {
       chai.request(app)
         .post('/login')
@@ -148,6 +164,28 @@ describe('Testing routes', () => {
         res.status.should.equal(201);
         done();
       });
+  });
+
+  it('should fail signup when invalid email', done => {
+    chai.request(app)
+    .post('/signup')
+    .send({ username: 'bar', password: 'baz', email: 'foo' })
+    .end((err, res) => {
+      should.exist(err);
+      res.status.should.equal(400);
+      done();
+    })
+  });
+
+  it('should success signup when valid email', done => {
+    chai.request(app)
+    .post('/signup')
+    .send({ username: 'bar', password: 'baz', email: 'foo@example.com' })
+    .end((err, res) => {
+      should.not.exist(err);
+      res.status.should.equal(201);
+      done();
+    })
   });
 
   it('should not dublicate user when signup', (done) => {
