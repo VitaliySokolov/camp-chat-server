@@ -1,0 +1,26 @@
+{
+  "extends": [
+    "eslint:recommended",
+    "@eleks/eleks"
+  ],
+  "env": {
+    "node": true,
+    "es6": true,
+    "mocha": true,
+    "mongo": true
+  },
+  "rules": {
+    "no-console": [
+      "error",
+      {
+        "allow": [
+          "info",
+          "warn",
+          "error"
+        ]
+      }
+    ],
+    "quotes":	[2,	"single"],
+    "eol-last":	0
+  }
+}

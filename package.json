@@ -8,7 +8,10 @@
     "dev": "nodemon --watch server ./server/server.js",
     "test": "NODE_ENV=test ./node_modules/mocha/bin/mocha test",
     "test:watch": "nodemon --exec 'NODE_ENV=test mocha -R nyan' test",
-    "prod": "NODE_ENV=production node ./server/server.js"
+    "prod": "NODE_ENV=production node ./server/server.js",
+    "lint": "eslint ./server",
+    "cover": "istanbul cover _mocha -- -R spec",
+    "coveralls": "npm run cover -- --report lcovonly && cat ./coverage/lcov.info | coveralls"
   },
   "keywords": [],
   "author": "",
@@ -29,9 +32,14 @@
     "socketio-jwt": "^4.5.0"
   },
   "devDependencies": {
+    "@eleks/eslint-config-eleks": "^0.2.1",
     "chai": "^3.5.0",
     "chai-http": "^3.0.0",
+    "coveralls": "^2.13.1",
+    "eslint": "^3.19.0",
+    "istanbul": "^0.4.5",
     "mocha": "^3.3.0",
+    "mocha-lcov-reporter": "^1.3.0",
     "nodemon": "^1.11.0"
   }
 }

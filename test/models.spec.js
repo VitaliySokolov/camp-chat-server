@@ -4,65 +4,83 @@ const chai = require('chai');
 const should = chai.should();
 const expect = chai.expect;
 const mongoose = require('mongoose');
-mongoose.Promise = global.Promise;
-const app = require('../server/app');
+
+// const app = require('../server/app');
 const User = require('../server/models/user');
 
+mongoose.Promise = global.Promise;
+
 describe('User model', () => {
-  beforeEach(done => {
-    User.remove(() => { done(); });
-  });
+    beforeEach(done => {
+        User.remove(() => done());
+    });
 
-  it('should not validate new User', () => {
-    const user = new User({
-      name: 'foo',
-      pass: 'bar',
-    });
-    const error = user.validateSync();
-    const fn = () => { throw error }
-    expect(fn).to.throw(mongoose.Error, /Path `username` is required/);
-  });
+    it('should not validate new User', () => {
+        const user = new User({
+            name: 'foo',
+            pass: 'bar'
+        });
+        const error = user.validateSync(),
+            fn = () => {
+                throw error;
+            };
 
-  it('create new User', (done) => {
-    const user = new User({
-      username: 'foo',
-      password: 'bar',
+        expect(fn).to.throw(mongoose.Error, /Path `username` is required/);
     });
-    user.save((err, res) => {
-      should.not.exist(err);
-      expect(res.username).to.equal('foo');
-      done();
-    })
-  });
 
-  it('check password', (done) => {
-    const user = new User({
-      username: 'foo',
-      password: 'baz'
-    });
-    user.save((err, res) => {
-      should.not.exist(err);
-      expect(res.username).to.equal('foo');
-      expect(res.checkPassword('baz')).to.be.true;
-      expect(res.checkPassword('bar')).not.to.be.true;
-      done();
-    });
-  });
+    it('create new User', done => {
+        const user = new User({
+            username: 'foo',
+            password: 'bar'
+        });
 
-  it('should authorize user', (done) => {
-    const user = new User({
-      username: 'foo',
-      password: 'bar',
+        user.save((err, res) => {
+            should.not.exist(err);
+            // console.log(res);
+            expect(res.username).to.equal('foo');
+            done();
+            // setTimeout(function () {
+            //   User.update({_id: res.id},
+            //     { $set: { username: 'bar' } },
+            //     { new: true, runValidators: true }, (err, u) => {
+            //       console.log(err);
+            //       console.log(u);
+            //       done();
+            //     })
+            // }, 100);
+        });
     });
-    user.save((err, user) => {
-      should.not.exist(err);
-      expect(user.username).to.equal('foo');
 
-      User.authorize('foo', 'bar', (err, res) => {
-        should.not.exist(err);
-        expect(res.username).to.equal('foo');
-        done();
-      });
+    it('check password', done => {
+        const user = new User({
+            username: 'foo',
+            password: 'baz'
+        });
+
+        user.save((err, savedUser) => {
+            should.not.exist(err);
+            savedUser.username.should.equal('foo');
+            savedUser.checkPassword('baz').should.equal(true);
+            savedUser.checkPassword('bar').should.equal(false);
+            return done();
+        });
     });
-  });
+
+    it('should authorize user', done => {
+        const user = new User({
+            username: 'foo',
+            password: 'bar'
+        });
+
+        user.save((err, savedUser) => {
+            should.not.exist(err);
+            expect(savedUser.username).to.equal('foo');
+
+            User.authorize('foo', 'bar', (err, res) => {
+                should.not.exist(err);
+                expect(res.username).to.equal('foo');
+                done();
+            });
+        });
+    });
 });
