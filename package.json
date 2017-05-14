@@ -10,7 +10,7 @@
     "test:watch": "nodemon --exec 'NODE_ENV=test mocha -R nyan' test",
     "prod": "NODE_ENV=production node ./server/server.js",
     "lint": "eslint ./server",
-    "cover": "istanbul cover _mocha -- -R spec",
+    "cover": "istanbul cover _mocha",
     "coveralls": "npm run cover -- --report lcovonly && cat ./coverage/lcov.info | coveralls"
   },
   "keywords": [],
