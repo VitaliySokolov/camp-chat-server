@@ -57,6 +57,9 @@ describe('User model', () => {
             password: 'baz'
         });
 
+        user.password.should.be.a('string');
+        user.password.should.equal('baz');
+
         user.save((err, savedUser) => {
             should.not.exist(err);
             savedUser.username.should.equal('foo');

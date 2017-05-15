@@ -2,9 +2,8 @@
 const socketioJwt = require('socketio-jwt'),
     config = require('../config.js'),
     User = require('../models/user'),
-    Message = require('../models/message');
-
-const DEFAULT_LIMIT_MESSAGE_NUMBER = 10;
+    Message = require('../models/message'),
+    SOCKETS = require('./constants');
 
 const initSocketIO = io => {
     io.sockets
@@ -39,25 +38,36 @@ const initSocketIO = io => {
                 Message
                     .findById(msgId)
                     .then(msg => {
-                        // console.log(msg.author.toString() === user.id);
                         if (msg.author.toString() !== user.id
-                            && 'role' in user && user.role !== 'admin')
-                            return new Error('no premission');
+                            || 'role' in user && user.role !== 'admin')
+                            throw new Error(SOCKETS.ERROR_NO_PERMISSION);
                         return msg.id;
                     })
-                    .then(id => {
-                        Message
-                            .remove({ _id: id })
-                            .then(() => {
-                                io.emit('message_deleted', { id });
-                            })
-                            .catch(err => {
-                                socket.emit('error', err);
-                            });
-                    })
+                    .then(deleteMessage)
+                    .then(sendDeletedMessageId)
+                    .catch(sendError);
+            }
+
+            function deleteMessage (id) {
+                return Message
+                    .remove({ _id: id })
+                    .then(() => id)
                     .catch(err => {
-                        socket.emit('error', err);
+                        console.error(err);
+                        throw new Error('database error');
                     });
+            }
+
+            function sendDeletedMessageId (id) {
+                return new Promise((resolve, reject) => {
+                    try {
+                        io.emit('message_deleted', { id });
+                        resolve(id);
+                    } catch (err) {
+                        console.error(err);
+                        reject('socket io error');
+                    }
+                });
             }
 
             function chatPutMessageHandler ({ msgId, msgText }) {
@@ -90,7 +100,7 @@ const initSocketIO = io => {
 
             function chatGetMessagesHandler (filter) {
                 const cutoff = filter && filter.cutoff || new Date(),
-                    limitCount = filter && filter.limitCount || DEFAULT_LIMIT_MESSAGE_NUMBER;
+                    limitCount = filter && filter.limitCount || SOCKETS.DEFAULT_LIMIT_MESSAGE_NUMBER;
                 // cutoff.setDate(cutoff.getDate() - filter.days);
 
                 Message
@@ -126,7 +136,7 @@ const initSocketIO = io => {
 
                 message.save((err, savedMessage) => {
                     if (err)
-                        io.emit('error', err);
+                        sendError(err);
                     else
                         findAuthor(savedMessage)
                             .then(formatMessage)
@@ -143,7 +153,9 @@ const initSocketIO = io => {
             }
 
             function sendError (error) {
-                return socket.emit('error', { error });
+                if (error instanceof Error)
+                    error = error.message;
+                return socket.emit('error message', { error });
             }
         });
 

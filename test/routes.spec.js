@@ -15,7 +15,7 @@ chai.use(chaiHttp);
 
 describe('Testing root route', () => {
     describe('GET /', () => {
-        it('should response with readme.md', done => {
+        it('should response with index', done => {
             chai.request(app)
                 .get('/').end((err, res) => {
                     should.not.exist(err);

@@ -21,14 +21,15 @@ const socketOptions = {
     transport: ['websocket'],
     'force new connection': true
 };
+const SOCKETS = require('../server/sockets/constants');
 
 const createUser = (userName, userPass) => User
-        .remove({ username: userName })
-        .then(() => new User({
-            username: userName,
-            password: userPass
-        })
-                .save());
+    .remove({ username: userName })
+    .then(() => new User({
+        username: userName,
+        password: userPass
+    })
+        .save());
 
 // const connectUser = (userName, userPass) => {
 //   return new Promise((resolve, reject) => {
@@ -79,7 +80,7 @@ describe('SocketIO connection', () => {
     });
 
     beforeEach(done => {
-        createUser('foo', 'bar')
+        createUser('foo', 'foopass')
             .then(user => {
                 fooUser = user;
                 const userObj = {
@@ -223,8 +224,8 @@ describe('SocketIO connection', () => {
         });
 
         it('should receive too old messages when request them', done => {
-            const expectedAuthor = fooUser.username;
-            const expectedMessage = 'hello foo';
+            const expectedAuthor = fooUser.username,
+                expectedMessage = 'hello foo';
 
             client.on('messages', data => {
                 data[0].msg.should.equal(expectedMessage);
@@ -241,8 +242,8 @@ describe('SocketIO connection', () => {
         });
 
         it('should edit message', done => {
-            const initialMessage = 'hi foo';
-            const expectedMessage = 'hello foo';
+            const initialMessage = 'hi foo',
+                expectedMessage = 'hello foo';
             let expectedMessageId;
 
             client.on('message_changed', data => {
@@ -257,6 +258,25 @@ describe('SocketIO connection', () => {
                     expectedMessageId = msg.id;
                     client.emit('put message',
                         { msgId: msg.id, msgText: expectedMessage });
+                });
+        });
+
+        it('should not delete message when user is not the author', done => {
+            const initialMessage = 'hi foo';
+
+            client.on('error message', data => {
+                data.error.should.equal(SOCKETS.ERROR_NO_PERMISSION);
+                done();
+            });
+
+            new User({ username: 'bar', password: 'barpass' })
+                .save()
+                .then(user => {
+                    createMessage(user, initialMessage)
+                        .then(msg => {
+                            client.emit('delete message',
+                                { msgId: msg.id });
+                        });
                 });
         });
 
