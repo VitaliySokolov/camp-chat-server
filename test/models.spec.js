@@ -1,12 +1,12 @@
 process.env.NODE_ENV = 'test';
 
-const chai = require('chai');
-const should = chai.should();
-const expect = chai.expect;
-const mongoose = require('mongoose');
+const
+    chai = require('chai'),
+    should = chai.should(),
+    expect = chai.expect,
+    mongoose = require('mongoose'),
 
-// const app = require('../server/app');
-const User = require('../server/models/user');
+    User = require('../server/models/user');
 
 mongoose.Promise = global.Promise;
 

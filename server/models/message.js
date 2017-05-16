@@ -13,12 +13,16 @@ const messageSchema = new Schema({
         ref: 'User',
         required: true
     },
+    room: {
+        type: ObjectId,
+        ref: 'Room'
+    },
     sentAt: {
         type: Date,
         default: new Date
     },
     editedAt: {
-        type: Date,
+        type: Date
     }
 });
 

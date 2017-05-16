@@ -1,6 +1,8 @@
 const mongoose = require('mongoose'),
     crypto = require('crypto'),
-    async = require('async');
+    async = require('async'),
+    Room = require('./room'),
+    Message = require('./message');
 
 const Schema = mongoose.Schema;
 
@@ -38,6 +40,20 @@ const userSchema = new Schema({
     }
 });
 
+userSchema.pre('remove', function (next) {
+    Promise.all([
+        Room.remove({ creator: this._id }),
+        Message.remove({ author: this._id })
+    ]).then(() => next());
+});
+
+userSchema.virtual('id').get(function () {
+    return this._id.toHexString();
+});
+
+userSchema.set('toJSON', {
+    virtuals: true
+});
 // userSchema.pre('save', function(next) {
 //   now = new Date();
 //   // console.log(this);

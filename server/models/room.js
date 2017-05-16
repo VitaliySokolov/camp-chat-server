@@ -1,4 +1,5 @@
-const mongoose = require('mongoose');
+const mongoose = require('mongoose'),
+    Message = require('./message');
 
 const Schema = mongoose.Schema,
     ObjectId = mongoose.Schema.Types.ObjectId;
@@ -21,10 +22,29 @@ const roomSchema = new Schema({
         type: Date,
         default: new Date
     },
-    participants: [{
+    users: [{
         type: ObjectId,
         ref: 'User'
     }]
 });
+
+roomSchema.pre('save', function (next) {
+    if (!this.users.find(user => this.creator.equals(user)))
+        this.users = [...this.users, this.creator];
+    next();
+});
+
+roomSchema.pre('remove', function (next) {
+    Message.remove({ roomId: this._id }, next);
+});
+
+roomSchema.virtual('id').get(function () {
+    return this._id.toHexString();
+});
+
+roomSchema.set('toJSON', {
+    virtuals: true
+});
+
 
 module.exports = mongoose.model('Room', roomSchema);
