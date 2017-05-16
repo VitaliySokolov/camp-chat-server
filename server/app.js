@@ -8,12 +8,14 @@ const
     expressValidator = require('express-validator'),
     mongoose = require('mongoose'),
     path = require('path'),
+    compression = require('compression'),
     config = require('./config.js'),
     routes = require('./routes');
 
 mongoose.Promise = global.Promise;
 mongoose.connect(config.mongoURL[app.settings.env]);
 
+app.use(compression());
 app.use(express.static(
     path.resolve(__dirname, '..', 'build')
 ));
