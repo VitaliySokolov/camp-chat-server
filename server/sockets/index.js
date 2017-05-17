@@ -38,6 +38,7 @@ const initSocketIO = io => {
 
                 Room
                     .find({ users: user.id })
+                    .populate('creator', { hashedPassword: 0, salt: 0, __v: 0 })
                     .then(rooms => {
                         socket.emit(SOCKETS.ROOMS, { rooms });
                     });
@@ -211,22 +212,30 @@ const initSocketIO = io => {
 
                 if (socket.room)
                     findFilter.room = socket.room;
+                else
+                    findFilter.room = { $exists: false };
                 Message
                     .find(findFilter)
                     .limit(limitCount)
                     .sort({ sentAt: -1 })
                     .populate('author', 'username')
-                    .select({ 'id': 1, 'text': 1, 'author': 1, 'sentAt': 1, 'editedAt': 1 })
+                    .select({ 'id': 1, 'text': 1, 'author': 1, 'sentAt': 1, 'editedAt': 1, 'room': 1 })
                     .then(msgs => {
-                        const items = msgs.map(msg => ({
-                            id: msg.id,
-                            msg: msg.text,
-                            time: +msg.sentAt,
-                            user: {
-                                id: msg.author.id,
-                                username: msg.author.username
-                            }
-                        }));
+                        const items = msgs.map(msg => {
+                            const newMsg = {
+                                id: msg.id,
+                                msg: msg.text,
+                                time: +msg.sentAt,
+                                user: {
+                                    id: msg.author.id,
+                                    username: msg.author.username
+                                }
+                            };
+
+                            if (msg.room)
+                                newMsg.room = msg.room;
+                            return newMsg;
+                        });
 
                         socket.emit(SOCKETS.MESSAGES, items);
                     });
@@ -282,7 +291,7 @@ const initSocketIO = io => {
     }
 
     function formatMessage ([message, user]) {
-        return Promise.resolve({
+        const newMsg = {
             id: message.id,
             msg: message.text,
             time: +message.sentAt,
@@ -290,7 +299,11 @@ const initSocketIO = io => {
                 id: user.id,
                 username: user.username
             }
-        });
+        };
+
+        if (message.room)
+            newMsg.room = message.room;
+        return Promise.resolve(newMsg);
     }
 };
 
