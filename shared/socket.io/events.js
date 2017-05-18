@@ -7,6 +7,7 @@ module.exports = {
     ROOM_USERS: 'room users',
     ADD_ROOM: 'add room',
     DELETE_ROOM: 'delete room',
+    EDIT_ROOM: 'edit room',
     JOIN_ROOM: 'join room',
     LEAVE_ROOM: 'leave room',
     INVITE_USER: 'invite user',

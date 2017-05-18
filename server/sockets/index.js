@@ -4,7 +4,8 @@ const socketioJwt = require('socketio-jwt'),
     User = require('../models/user'),
     Message = require('../models/message'),
     Room = require('../models/room'),
-    SOCKETS = require('./constants');
+    SOCKETS = require('../../shared/socket.io/events'),
+    CONSTANTS = require('./constants');
 
 const initSocketIO = io => {
     io.sockets
@@ -28,6 +29,7 @@ const initSocketIO = io => {
                 .on(SOCKETS.ROOM_USERS, listRoomUsersHandler)
                 .on(SOCKETS.ADD_ROOM, addRoomHandler)
                 .on(SOCKETS.DELETE_ROOM, deleteRoomHandler)
+                .on(SOCKETS.EDIT_ROOM, editRoomHandler)
                 .on(SOCKETS.JOIN_ROOM, joinRoomHandler)
                 .on(SOCKETS.LEAVE_ROOM, leaveRoomHandler)
                 .on(SOCKETS.INVITE_USER, inviteUserHandler)
@@ -55,17 +57,18 @@ const initSocketIO = io => {
 
             function listRoomUsersHandler ({ roomId }) {
                 Room
-                    .findOne({ roomId })
+                    .findById(roomId)
                     .select('users')
                     .populate('users', { hashedPassword: 0, salt: 0, __v: 0 })
                     .then(room => {
-                        socket.emit(SOCKETS.USERS, { users: room.users });
+                        socket.emit(SOCKETS.USERS, { roomId, users: room.users });
                     });
             }
 
             function addRoomHandler ({ title }) {
                 const user = socket.decoded_token,
                     room = new Room({ title, creator: user.id });
+                // TODO: must be unique pair title and creator
 
                 room
                     .save()
@@ -81,7 +84,7 @@ const initSocketIO = io => {
                     .findById(roomId)
                     .then(room => {
                         if (room.creator.toString() !== user.id)
-                            return sendError(SOCKETS.ERROR_NO_PERMISSION);
+                            return sendError(CONSTANTS.ERROR_NO_PERMISSION);
                         Room
                             .remove({ _id: room.id })
                             .then(() => {
@@ -90,10 +93,32 @@ const initSocketIO = io => {
                     });
             }
 
+            function editRoomHandler ({ roomId, title }) {
+                const user = socket.decoded_token;
+
+                title = title.trim();
+                if (title === '')
+                    return sendError(CONSTANTS.ERROR_EMPTY_FIELD);
+                return Room
+                    .findById(roomId)
+                    .then(room => {
+                        if (room.creator.toString() !== user.id)
+                            return sendError(CONSTANTS.ERROR_NO_PERMISSION);
+
+                        room.title = title;
+                        room.editedAt = Date.now();
+                        return room
+                            .save()
+                            .then(savedRoom => {
+                                io.emit(SOCKETS.EDIT_ROOM, { room: savedRoom });
+                            });
+                    });
+            }
+
             function joinRoomHandler ({ roomId }) {
                 userInvited(roomId).then(invited => {
                     if (!invited)
-                        return sendError(SOCKETS.ERROR_NO_PERMISSION);
+                        return sendError(CONSTANTS.ERROR_NO_PERMISSION);
                     leaveRoomHandler();
                     socket.join(roomId, () => {
                         socket.room = roomId;
@@ -145,7 +170,7 @@ const initSocketIO = io => {
                     .then(msg => {
                         if (msg.author.toString() !== user.id
                             || 'role' in user && user.role !== 'admin')
-                            throw new Error(SOCKETS.ERROR_NO_PERMISSION);
+                            throw new Error(CONSTANTS.ERROR_NO_PERMISSION);
                         return msg.id;
                     })
                     .then(deleteMessage)
@@ -187,7 +212,7 @@ const initSocketIO = io => {
                         // console.log(msg.author.toString() === user.id);
                         if (msg.author.toString() !== user.id
                             && 'role' in user && user.role !== 'admin')
-                            throw new Error(SOCKETS.ERROR_NO_PERMISSION);
+                            throw new Error(CONSTANTS.ERROR_NO_PERMISSION);
 
                         msg.text = msgText;
                         // msg['editedAt'] = new Date();
@@ -207,7 +232,7 @@ const initSocketIO = io => {
 
             function listMessagesHandler (filter) {
                 const cutoff = filter && filter.cutoff || new Date(),
-                    limitCount = filter && filter.limitCount || SOCKETS.DEFAULT_LIMIT_MESSAGE_NUMBER,
+                    limitCount = filter && filter.limitCount || CONSTANTS.DEFAULT_LIMIT_MESSAGE_NUMBER,
                     findFilter = { sentAt: { $lt: cutoff } };
 
                 if (socket.room)
@@ -246,7 +271,7 @@ const initSocketIO = io => {
                     msgObj = {
                         text: msg,
                         author: user.id,
-                        sentAt: +new Date
+                        sentAt: Date.now()
                     },
                     message = new Message(msgObj);
 

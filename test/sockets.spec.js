@@ -13,7 +13,8 @@ const io = require('socket.io-client'),
     User = require('../server/models/user'),
     Message = require('../server/models/message'),
     Room = require('../server/models/room'),
-    SOCKETS = require('../server/sockets/constants');
+    SOCKETS = require('../shared/socket.io/events'),
+    CONSTANTS = require('../server/sockets/constants');
 
 mongoose.Promise = global.Promise;
 const socketOptions = { transport: ['websocket'], 'force new connection': true };
@@ -254,7 +255,7 @@ describe('SocketIO connection', () => {
             const initialMessage = 'hi foo';
 
             client.on(SOCKETS.ERROR_MESSAGE, data => {
-                data.error.should.equal(SOCKETS.ERROR_NO_PERMISSION);
+                data.error.should.equal(CONSTANTS.ERROR_NO_PERMISSION);
                 done();
             });
 
@@ -442,7 +443,7 @@ describe('SocketIO connection', () => {
             });
 
             client.on(SOCKETS.JOIN_ROOM, () => {
-                client.emit(SOCKETS.ROOM_USERS, roomId);
+                client.emit(SOCKETS.ROOM_USERS, { roomId });
             });
             client.on(SOCKETS.ADD_ROOM, ({ room }) => {
                 roomId = room.id;

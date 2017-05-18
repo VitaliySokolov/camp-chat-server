@@ -16,11 +16,11 @@ const roomSchema = new Schema({
     },
     createdAt: {
         type: Date,
-        default: new Date
+        default: Date.now
     },
     editedAt: {
         type: Date,
-        default: new Date
+        default: Date.now
     },
     users: [{
         type: ObjectId,
@@ -31,6 +31,10 @@ const roomSchema = new Schema({
 roomSchema.pre('save', function (next) {
     if (!this.users.find(user => this.creator.equals(user)))
         this.users = [...this.users, this.creator];
+    if (!this.createdAt)
+        this.createdAt = Date.now();
+    if (!this.editedAt)
+        this.editedAt = Date.now();
     next();
 });
 
