@@ -294,8 +294,10 @@ const initSocketIO = io => {
                                 newMsg.room = msg.room;
                             return newMsg;
                         });
+                        // room id or 0 as id of common room
+                        const roomId = socket.room || 0;
 
-                        socket.emit(SOCKETS.MESSAGES, items);
+                        socket.emit(SOCKETS.MESSAGES, {roomId, messages: [...items]});
                     });
             }
 

@@ -179,7 +179,8 @@ describe('SocketIO connection', () => {
 
         it('should receive empty array of messages', done => {
             client.on(SOCKETS.MESSAGES, data => {
-                data.should.deep.equal([]);
+                data.roomId.should.equal(0);
+                data.messages.should.deep.equal([]);
                 done();
             });
             Message
@@ -192,8 +193,8 @@ describe('SocketIO connection', () => {
             const expectedMessage = 'hello foo';
 
             client.on(SOCKETS.MESSAGES, data => {
-                data[0].msg.should.equal(expectedMessage);
-                data[0].user.username.should.equal(expectedAuthor);
+                data.messages[0].msg.should.equal(expectedMessage);
+                data.messages[0].user.username.should.equal(expectedAuthor);
                 done();
             });
             createMessage(fooUser, expectedMessage)
@@ -204,7 +205,7 @@ describe('SocketIO connection', () => {
             const expectedMessage = 'hello foo';
 
             client.on(SOCKETS.MESSAGES, data => {
-                data.should.deep.equal([]);
+                data.messages.should.deep.equal([]);
                 done();
             });
             createMessage(fooUser, expectedMessage, 2)
@@ -221,8 +222,8 @@ describe('SocketIO connection', () => {
                 expectedMessage = 'hello foo';
 
             client.on(SOCKETS.MESSAGES, data => {
-                data[0].msg.should.equal(expectedMessage);
-                data[0].user.username.should.equal(expectedAuthor);
+                data.messages[0].msg.should.equal(expectedMessage);
+                data.messages[0].user.username.should.equal(expectedAuthor);
                 done();
             });
             createMessage(fooUser, expectedMessage, 2)
