@@ -33,6 +33,7 @@ const initSocketIO = io => {
                 .on(SOCKETS.JOIN_ROOM, joinRoomHandler)
                 .on(SOCKETS.LEAVE_ROOM, leaveRoomHandler)
                 .on(SOCKETS.INVITE_USER, inviteUserHandler)
+                .on(SOCKETS.KICK_USER, kickUserHandler)
                 .on(SOCKETS.DISCONNECT, disconnectHandler);
 
             function listRoomsHandler () {
@@ -73,7 +74,10 @@ const initSocketIO = io => {
                 room
                     .save()
                     .then(savedRoom => {
-                        socket.emit(SOCKETS.ADD_ROOM, { room: savedRoom });
+                        Room
+                            .findById(savedRoom.id)
+                            .populate('creator', { hashedPassword: 0, salt: 0, __v: 0 })
+                            .then(room => socket.emit(SOCKETS.ADD_ROOM, { room }));
                     });
             }
 
@@ -146,14 +150,43 @@ const initSocketIO = io => {
                     .findById(roomId)
                     .then(room => {
                         if (room.creator.toString() !== socket.decoded_token.id)
-                            return;
+                            return sendError(CONSTANTS.ERROR_NO_PERMISSION);
                         if (userId in room.users)
-                            return;
+                            return sendError(CONSTANTS.ERROR_WRONG_DATA);
+                        if (room.creator.toString() === userId)
+                            return sendError(CONSTANTS.ERROR_NO_SELF_INVITE);
                         room.users.push(userId);
                         room
                             .save()
                             .then(savedRoom => {
                                 socket.emit(SOCKETS.INVITE_USER, { roomId: savedRoom.id, userId });
+                            });
+                    })
+                    .catch(error => {
+                        console.error(error);
+                    });
+            }
+
+            function kickUserHandler ({ roomId, userId }) {
+                if (!roomId)
+                    return sendError('common room');
+                return Room
+                    .findById(roomId)
+                    .then(room => {
+                        if (room.creator.toString() !== socket.decoded_token.id)
+                            return sendError(CONSTANTS.ERROR_NO_PERMISSION);
+                        if (userId in room.users)
+                            return sendError(CONSTANTS.ERROR_WRONG_DATA);
+                        if (room.creator.toString() === userId)
+                            return sendError(CONSTANTS.ERROR_NO_SELF_KICK);
+                        room.users = room.users.filter(user => user.toString() !== userId);
+                        room
+                            .save()
+                            .then(savedRoom => {
+                                socket.emit(SOCKETS.KICK_USER, { roomId: savedRoom.id, userId });
+                            })
+                            .catch(error => {
+                                console.error(error);
                             });
                     })
                     .catch(error => {

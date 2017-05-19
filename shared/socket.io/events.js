@@ -11,6 +11,7 @@ module.exports = {
     JOIN_ROOM: 'join room',
     LEAVE_ROOM: 'leave room',
     INVITE_USER: 'invite user',
+    KICK_USER: 'kick user',
     MESSAGES: 'messages',
     MESSAGE: 'message',
     EDIT_MESSAGE: 'edit message',

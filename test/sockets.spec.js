@@ -1,8 +1,11 @@
 process.env.NODE_ENV = 'test';
 
-// const chai = require('chai');
-// const mocha = require('mocha');
-// const should = chai.should();
+const mocha = require('mocha');
+const chai = require('chai');
+const should = chai.should();
+const chaiAsPromised = require('chai-as-promised');
+
+chai.use(chaiAsPromised);
 
 const io = require('socket.io-client'),
     jwt = require('jsonwebtoken'),
@@ -453,19 +456,65 @@ describe('SocketIO connection', () => {
         });
 
         it('should invite user to the room', done => {
+            const expectedNumberUsers = 2;
             let expectedRoomId;
 
             client.on(SOCKETS.INVITE_USER, ({ roomId, userId }) => {
                 userId.should.equal(barUser.id);
                 roomId.should.equal(expectedRoomId);
-                Room.findById(roomId).then(room => {
-                    room.users.length.should.equal(2);
-                    done();
-                });
+                Room
+                    .findById(roomId)
+                    .then(room => room.users.length)
+                    .should.eventually.equal(expectedNumberUsers)
+                    .and.notify(done);
             });
             client.on(SOCKETS.ADD_ROOM, ({ room }) => {
                 expectedRoomId = room.id;
                 client.emit(SOCKETS.INVITE_USER, { roomId: expectedRoomId, userId: barUser.id });
+            });
+            client.emit(SOCKETS.ADD_ROOM, { title: 'something' });
+        });
+
+        it('should not invite self to the room', done => {
+            client.on(SOCKETS.ERROR_MESSAGE, ({ error }) => {
+                error.should.equal(CONSTANTS.ERROR_NO_SELF_INVITE);
+                done();
+            });
+            client.on(SOCKETS.ADD_ROOM, ({ room }) => {
+                client.emit(SOCKETS.INVITE_USER, { roomId: room.id, userId: fooUser.id });
+            });
+            client.emit(SOCKETS.ADD_ROOM, { title: 'something' });
+        });
+
+        it('should kick user from the room', done => {
+            let expectedRoomId;
+
+            client.on(SOCKETS.KICK_USER, ({ roomId, userId }) => {
+                userId.should.equal(barUser.id);
+                roomId.should.equal(expectedRoomId);
+                Room.findById(roomId).then(room => {
+                    room.users.length.should.equal(1);
+                    room.users[0].toString().should.equal(fooUser.id);
+                }).should.be.fulfilled.and.notify(done);
+            });
+
+            client.on(SOCKETS.INVITE_USER, ({ roomId, userId }) => {
+                client.emit(SOCKETS.KICK_USER, { roomId, userId });
+            });
+            client.on(SOCKETS.ADD_ROOM, ({ room }) => {
+                expectedRoomId = room.id;
+                client.emit(SOCKETS.INVITE_USER, { roomId: expectedRoomId, userId: barUser.id });
+            });
+            client.emit(SOCKETS.ADD_ROOM, { title: 'something' });
+        });
+
+        it('should not kick self from the room', done => {
+            client.on(SOCKETS.ERROR_MESSAGE, ({ error }) => {
+                error.should.equal(CONSTANTS.ERROR_NO_SELF_KICK);
+                done();
+            });
+            client.on(SOCKETS.ADD_ROOM, ({ room }) => {
+                client.emit(SOCKETS.KICK_USER, { roomId: room.id, userId: fooUser.id });
             });
             client.emit(SOCKETS.ADD_ROOM, { title: 'something' });
         });
