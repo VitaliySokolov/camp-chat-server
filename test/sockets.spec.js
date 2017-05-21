@@ -1,8 +1,8 @@
 process.env.NODE_ENV = 'test';
 
-const mocha = require('mocha');
+// const mocha = require('mocha');
 const chai = require('chai');
-const should = chai.should();
+// const should = chai.should();
 const chaiAsPromised = require('chai-as-promised');
 
 chai.use(chaiAsPromised);
@@ -421,7 +421,7 @@ describe('SocketIO connection', () => {
                 done();
             });
 
-            client.on(SOCKETS.JOIN_ROOM, ({ user }) => {
+            client.on(SOCKETS.JOIN_ROOM, () => {
                 client.emit(SOCKETS.MESSAGE, expectedMessage);
             });
             client.on(SOCKETS.ADD_ROOM, ({ room }) => {

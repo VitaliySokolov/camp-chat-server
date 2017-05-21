@@ -1,5 +1,6 @@
 // const jwt = require('jsonwebtoken');
 const socketioJwt = require('socketio-jwt'),
+    _ = require('lodash'),
     config = require('../config.js'),
     User = require('../models/user'),
     Message = require('../models/message'),
@@ -36,6 +37,17 @@ const initSocketIO = io => {
                 .on(SOCKETS.KICK_USER, kickUserHandler)
                 .on(SOCKETS.DISCONNECT, disconnectHandler);
 
+            function getSocketId (userId) {
+                const foundSocket = Object
+                    .values(io.sockets.sockets)
+                    .find(s => s.decoded_token
+                        && s.decoded_token.id === userId);
+
+                if (foundSocket)
+                    return foundSocket.id;
+                return foundSocket;
+            }
+
             function listRoomsHandler () {
                 const user = socket.decoded_token;
 
@@ -51,9 +63,11 @@ const initSocketIO = io => {
                 User
                     .find({})
                     .select({ hashedPassword: 0, salt: 0, __v: 0 })
+                    .lean()
                     .then(users => {
+                        users = formatUsers(users);
                         socket.emit(SOCKETS.USERS, { users });
-                    });
+                    }).catch(err => console.error(err));
             }
 
             function listRoomUsersHandler ({ roomId }) {
@@ -61,9 +75,25 @@ const initSocketIO = io => {
                     .findById(roomId)
                     .select('users')
                     .populate('users', { hashedPassword: 0, salt: 0, __v: 0 })
+                    .lean()
                     .then(room => {
-                        socket.emit(SOCKETS.USERS, { roomId, users: room.users });
+                        const users = formatUsers(room.users);
+
+                        socket.emit(SOCKETS.USERS, { roomId, users });
                     });
+            }
+
+            function formatUsers (users) {
+                return users.map(user => {
+                    let online = false;
+                    const id = user._id.toString();
+
+                    user = _.omit(user, '_id');
+                    if (getSocketId(id))
+                        online = true;
+                    return Object.assign({}, user,
+                        { id, online });
+                });
             }
 
             function addRoomHandler ({ title }) {
@@ -89,12 +119,31 @@ const initSocketIO = io => {
                     .then(room => {
                         if (room.creator.toString() !== user.id)
                             return sendError(CONSTANTS.ERROR_NO_PERMISSION);
-                        Room
+                        return Room
                             .remove({ _id: room.id })
                             .then(() => {
-                                socket.emit(SOCKETS.DELETE_ROOM, { roomId: room.id });
+                                leaveRoomByAllUsers(roomId);
+                                io.emit(SOCKETS.DELETE_ROOM, { roomId: room.id });
                             });
                     });
+            }
+
+            function leaveRoomByAllUsers (roomId) {
+                const room = io.sockets.adapter.rooms[roomId];
+
+                if (room) {
+                    const socketIds = room.sockets;
+
+                    Object
+                        .keys(socketIds)
+                        .forEach(localSocketId => {
+                            const localSocket = io.sockets.sockets[localSocketId];
+
+                            localSocket.leave(roomId);
+                            if (localSocket.room === roomId)
+                                localSocket.room = '';
+                        });
+                }
             }
 
             function editRoomHandler ({ roomId, title }) {
@@ -124,7 +173,7 @@ const initSocketIO = io => {
                     if (!invited)
                         return sendError(CONSTANTS.ERROR_NO_PERMISSION);
                     leaveRoomHandler();
-                    socket.join(roomId, () => {
+                    return socket.join(roomId, () => {
                         socket.room = roomId;
                         io.to(roomId).emit(SOCKETS.JOIN_ROOM, { user: socket.decoded_token }
                         );
@@ -156,10 +205,16 @@ const initSocketIO = io => {
                         if (room.creator.toString() === userId)
                             return sendError(CONSTANTS.ERROR_NO_SELF_INVITE);
                         room.users.push(userId);
-                        room
+                        return room
                             .save()
                             .then(savedRoom => {
                                 socket.emit(SOCKETS.INVITE_USER, { roomId: savedRoom.id, userId });
+                                const socketId = getSocketId(userId);
+
+                                if (socketId)
+                                    io
+                                        .to(socketId)
+                                        .emit(SOCKETS.ADD_ROOM, { room: savedRoom });
                             });
                     })
                     .catch(error => {
@@ -180,10 +235,22 @@ const initSocketIO = io => {
                         if (room.creator.toString() === userId)
                             return sendError(CONSTANTS.ERROR_NO_SELF_KICK);
                         room.users = room.users.filter(user => user.toString() !== userId);
-                        room
+                        return room
                             .save()
                             .then(savedRoom => {
                                 socket.emit(SOCKETS.KICK_USER, { roomId: savedRoom.id, userId });
+                                const socketId = getSocketId(userId);
+
+                                if (socketId) {
+                                    const kickedSocket = io.sockets.sockets[socketId];
+
+                                    if (kickedSocket.room === roomId)
+                                        kickedSocket.leave(roomId);
+
+                                    io
+                                        .to(socketId)
+                                        .emit(SOCKETS.DELETE_ROOM, { roomId });
+                                }
                             })
                             .catch(error => {
                                 console.error(error);
@@ -297,7 +364,7 @@ const initSocketIO = io => {
                         // room id or 0 as id of common room
                         const roomId = socket.room || 0;
 
-                        socket.emit(SOCKETS.MESSAGES, {roomId, messages: [...items]});
+                        socket.emit(SOCKETS.MESSAGES, { roomId, messages: [...items] });
                     });
             }
 
