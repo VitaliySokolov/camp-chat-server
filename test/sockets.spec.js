@@ -522,6 +522,12 @@ describe('SocketIO connection', () => {
     });
 
     describe('Users', () => {
+        beforeEach(done => {
+            client.on('join', () => {
+                done();
+            });
+        });
+
         it('should return user by id', done => {
             client.on(SOCKETS.USER, ({user}) => {
                 user.id.should.equal(fooUser._id.toString());
