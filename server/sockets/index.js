@@ -25,6 +25,8 @@ const initSocketIO = io => {
                 .on(SOCKETS.EDIT_MESSAGE, editMessageHandler)
                 .on(SOCKETS.DELETE_MESSAGE, deleteMessageHandler)
                 .on(SOCKETS.USERS, listUsersHandler)
+                .on(SOCKETS.USER, chatUsersHandler)
+                .on(SOCKETS.EDIT_USER, editUsersHandler)
                 .on(SOCKETS.MESSAGES, listMessagesHandler)
                 .on(SOCKETS.ROOMS, listRoomsHandler)
                 .on(SOCKETS.ROOM_USERS, listRoomUsersHandler)
@@ -46,6 +48,45 @@ const initSocketIO = io => {
                 if (foundSocket)
                     return foundSocket.id;
                 return foundSocket;
+            }
+
+            function chatUsersHandler ({ userId }) {
+                User
+                    .findById(userId)
+                    .select({ hashedPassword: 0, salt: 0, __v: 0 })
+                    .lean()
+                    .then(user => {
+                        user = formatUser(user);
+                        socket.emit(SOCKETS.USER, { user });
+                    }).catch(err => console.error(err));
+            }
+
+            function editUsersHandler ({user}) {
+                const sender = socket.decoded_token;
+
+                if (sender.id !== user.id)
+                    return sendError(SOCKETS.ERROR_NO_PERMISSION);
+                return User
+                    .findById(user.id)
+                    .then(userInDb => {
+                        if (user.username)
+                            userInDb.username = user.username;
+                        if (user.email)
+                            userInDb.email = user.email;
+                        if (user.avatar)
+                            userInDb.avatar = user.avatar;
+                        userInDb.editedAt = Date.now();
+                        userInDb
+                            .save()
+                            .then(savedUser => {
+                                socket.broadcast.emit(SOCKETS.EDIT_USER, {user: savedUser});
+                                socket.emit(SOCKETS.EDIT_USER, {user: savedUser, self: true});
+                            })
+                            .catch(error => {
+                                console.error(error);
+                                sendError(CONSTANTS.DB_ERROR);
+                            });
+                    });
             }
 
             function listRoomsHandler () {
@@ -84,16 +125,18 @@ const initSocketIO = io => {
             }
 
             function formatUsers (users) {
-                return users.map(user => {
-                    let online = false;
-                    const id = user._id.toString();
+                return users.map(user => formatUser(user));
+            }
 
-                    user = _.omit(user, '_id');
-                    if (getSocketId(id))
-                        online = true;
-                    return Object.assign({}, user,
-                        { id, online });
-                });
+            function formatUser (user) {
+                let online = false;
+                const id = user._id.toString();
+
+                user = _.omit(user, '_id');
+                if (getSocketId(id))
+                    online = true;
+                return Object.assign({}, user,
+                    { id, online });
             }
 
             function addRoomHandler ({ title }) {
@@ -107,7 +150,7 @@ const initSocketIO = io => {
                         Room
                             .findById(savedRoom.id)
                             .populate('creator', { hashedPassword: 0, salt: 0, __v: 0 })
-                            .then(room => socket.emit(SOCKETS.ADD_ROOM, { room }));
+                            .then(foundRoom => socket.emit(SOCKETS.ADD_ROOM, { room: foundRoom }));
                     });
             }
 
@@ -175,8 +218,8 @@ const initSocketIO = io => {
                     leaveRoomHandler();
                     return socket.join(roomId, () => {
                         socket.room = roomId;
-                        io.to(roomId).emit(SOCKETS.JOIN_ROOM, { user: socket.decoded_token }
-                        );
+                        socket.broadcast.to(roomId).emit(SOCKETS.JOIN_ROOM, { user: socket.decoded_token });
+                        socket.emit(SOCKETS.JOIN_ROOM, { user: socket.decoded_token, self: true });
                     });
                 });
             }
@@ -189,7 +232,8 @@ const initSocketIO = io => {
                 if (!socket.room)
                     return;
                 socket.leave(socket.room, () => {
-                    io.to(socket.room).emit(SOCKETS.LEAVE_ROOM, { user: socket.decoded_token });
+                    socket.broadcast.to(socket.room).emit(SOCKETS.LEAVE_ROOM, { user: socket.decoded_token });
+                    socket.emit(SOCKETS.LEAVE_ROOM, { user: socket.decoded_token, self: true });
                     socket.room = '';
                 });
             }
@@ -362,7 +406,7 @@ const initSocketIO = io => {
                             return newMsg;
                         });
                         // room id or 0 as id of common room
-                        const roomId = socket.room || 0;
+                        const roomId = socket.room || CONSTANTS.COMMON_ROOM_ID;
 
                         socket.emit(SOCKETS.MESSAGES, { roomId, messages: [...items] });
                     });

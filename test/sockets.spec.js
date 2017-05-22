@@ -520,4 +520,31 @@ describe('SocketIO connection', () => {
             client.emit(SOCKETS.ADD_ROOM, { title: 'something' });
         });
     });
+
+    describe('Users', () => {
+        it('should return user by id', done => {
+            client.on(SOCKETS.USER, ({user}) => {
+                user.id.should.equal(fooUser._id.toString());
+                user.username.should.equal(fooUser.username);
+                done();
+            });
+            client.emit(SOCKETS.USER, {userId: fooUser._id});
+        });
+
+        it('should add email to user profile', done => {
+            const expectedEmail = 'foo@bar.com',
+                editedUser = Object.assign({}, fooUser, {
+                    id: fooUser._id.toString(),
+                    email: expectedEmail
+                });
+
+            client.on(SOCKETS.EDIT_USER, ({user}) => {
+                user.email.should.equal(expectedEmail);
+                done();
+            });
+
+
+            client.emit(SOCKETS.EDIT_USER, {user: editedUser});
+        });
+    });
 });

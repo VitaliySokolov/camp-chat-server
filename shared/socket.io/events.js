@@ -4,6 +4,8 @@ module.exports = {
     DISCONNECT: 'disconnect',
     ROOMS: 'rooms',
     USERS: 'users',
+    USER: 'user',
+    EDIT_USER: 'edit user',
     ROOM_USERS: 'room users',
     ADD_ROOM: 'add room',
     DELETE_ROOM: 'delete room',
