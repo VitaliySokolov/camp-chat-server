@@ -193,6 +193,9 @@ const initSocketIO = io => {
             function editRoomHandler ({ roomId, newTitle }) {
                 const user = socket.decoded_token;
 
+                if (typeof newTitle !== 'string' || typeof roomId !== 'string')
+                    return sendError(CONSTANTS.ERROR_WRONG_DATA);
+
                 newTitle = newTitle.trim();
                 if (newTitle === '')
                     return sendError(CONSTANTS.ERROR_EMPTY_FIELD);
