@@ -41,7 +41,8 @@ const initSocketIO = io => {
 
             function getSocketId (userId) {
                 const foundSocket = Object
-                    .values(io.sockets.sockets)
+                    .keys(io.sockets.sockets)
+                    .map(id => io.sockets.sockets[id])
                     .find(s => s.decoded_token
                         && s.decoded_token.id === userId);
 
