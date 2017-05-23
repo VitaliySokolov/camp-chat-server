@@ -378,6 +378,24 @@ describe('SocketIO connection', () => {
             client.emit(SOCKETS.ADD_ROOM, { title: 'something' });
         });
 
+        it('should edit room', done => {
+            const expectedTitle = 'new room',
+                originalTitle = 'old room';
+            let expectedRoomId;
+
+            client.on(SOCKETS.EDIT_ROOM, ({ room }) => {
+                room.title.should.equal(expectedTitle);
+                room.id.should.equal(expectedRoomId);
+                room.creator.id.should.equal(fooUser._id.toString());
+                done();
+            });
+            client.on(SOCKETS.ADD_ROOM, ({ room }) => {
+                expectedRoomId = room.id;
+                client.emit(SOCKETS.EDIT_ROOM, {roomId: expectedRoomId, newTitle: expectedTitle});
+            });
+            client.emit(SOCKETS.ADD_ROOM, { title: originalTitle });
+        });
+
         it('should join room', done => {
             client.on(SOCKETS.JOIN_ROOM, ({ user }) => {
                 user.id.should.equal(fooUser.id);
@@ -413,7 +431,7 @@ describe('SocketIO connection', () => {
             client.emit(SOCKETS.ADD_ROOM, { title: 'something' });
         });
 
-        it('shoul receive message in room', done => {
+        it('should receive message in room', done => {
             const expectedMessage = 'hello world 2';
 
             client.on(SOCKETS.MESSAGE, message => {

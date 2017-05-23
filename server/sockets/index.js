@@ -62,7 +62,7 @@ const initSocketIO = io => {
                     }).catch(err => console.error(err));
             }
 
-            function editUsersHandler ({user}) {
+            function editUsersHandler ({ user }) {
                 const sender = socket.decoded_token;
 
                 if (sender.id !== user.id)
@@ -80,8 +80,8 @@ const initSocketIO = io => {
                         userInDb
                             .save()
                             .then(savedUser => {
-                                socket.broadcast.emit(SOCKETS.EDIT_USER, {user: savedUser});
-                                socket.emit(SOCKETS.EDIT_USER, {user: savedUser, self: true});
+                                socket.broadcast.emit(SOCKETS.EDIT_USER, { user: savedUser });
+                                socket.emit(SOCKETS.EDIT_USER, { user: savedUser, self: true });
                             })
                             .catch(error => {
                                 console.error(error);
@@ -190,11 +190,11 @@ const initSocketIO = io => {
                 }
             }
 
-            function editRoomHandler ({ roomId, title }) {
+            function editRoomHandler ({ roomId, newTitle }) {
                 const user = socket.decoded_token;
 
-                title = title.trim();
-                if (title === '')
+                newTitle = newTitle.trim();
+                if (newTitle === '')
                     return sendError(CONSTANTS.ERROR_EMPTY_FIELD);
                 return Room
                     .findById(roomId)
@@ -202,12 +202,19 @@ const initSocketIO = io => {
                         if (room.creator.toString() !== user.id)
                             return sendError(CONSTANTS.ERROR_NO_PERMISSION);
 
-                        room.title = title;
+                        room.title = newTitle;
                         room.editedAt = Date.now();
                         return room
                             .save()
                             .then(savedRoom => {
-                                io.emit(SOCKETS.EDIT_ROOM, { room: savedRoom });
+                                Room
+                                    .findById(savedRoom._id)
+                                    .populate('creator',
+                                        { hashedPassword: 0, salt: 0, __v: 0 })
+                                    .then(foundRoom => {
+                                        io.emit(SOCKETS.EDIT_ROOM,
+                                            { room: foundRoom });
+                                    });
                             });
                     });
             }
