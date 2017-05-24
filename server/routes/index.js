@@ -22,7 +22,7 @@ router.post('/login', (req, res) => {
             res.status(UNAUTHORIZED).json({ error: err });
         else {
             const userObj = { id: user.id, username: user.username },
-                token = jwt.sign(userObj, config.jwtSectet, { noTimestamp: true });
+                token = jwt.sign(userObj, config.jwtSectet, { expiresIn: '1h' });
 
             res.status(OK).json({
                 user: userObj,
