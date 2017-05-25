@@ -1,8 +1,8 @@
 const express = require('express'),
     path = require('path'),
-    jwt = require('jsonwebtoken');
-// const fs = require('fs');
-// const marked = require('marked');
+    jwt = require('jsonwebtoken'),
+    fs = require('fs'),
+    marked = require('marked');
 
 const config = require('../config.js'),
     User = require('../models/user'),
@@ -121,8 +121,22 @@ router.get('/messages', (req, res) => {
         });
 });
 
-router.get('*', (req, res) => {
-    res.sendFile(path.resolve(__dirname, '..', '..', 'build', 'index.html'));
+router.get('*', (req, res, next) => {
+    res.sendFile(path.resolve(__dirname, '..', '..', 'build', 'index.html'), err => {
+        if (err)
+            if (err.code === 'ENOENT')
+                sendReadmeMd(req, res, next);
+            else
+                return next(err);
+    });
 });
+
+function sendReadmeMd (req, res, next) {
+    fs.readFile(path.resolve(__dirname, '..', '..', 'readme.md'), 'utf8', (err, data) => {
+        if (err)
+            return next(err);
+        return res.send(marked(data.toString()));
+    });
+}
 
 module.exports = router;

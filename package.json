@@ -6,7 +6,7 @@
   "scripts": {
     "server": "node ./server/server.js",
     "server:dev": "nodemon --watch server ./server/server.js",
-    "server:test": "NODE_ENV=test ./node_modules/mocha/bin/mocha test",
+    "test": "NODE_ENV=test ./node_modules/mocha/bin/mocha test",
     "test:watch": "nodemon --exec 'NODE_ENV=test mocha -R nyan' test",
     "prod": "NODE_ENV=production node ./server/server.js",
     "lint": "eslint ./server ./src ./shared",
@@ -24,8 +24,7 @@
     "watch-css": "npm run build-css && node-sass src/ -o src/ --watch --recursive",
     "pree2e": "webdriver-manager update",
     "e2e": "protractor",
-    "build:clean": "rimraf ./build ./coverage",
-    "test": "npm-run-all server:test client:test"
+    "build:clean": "rimraf ./build ./coverage"
   },
   "keywords": [],
   "author": "",
