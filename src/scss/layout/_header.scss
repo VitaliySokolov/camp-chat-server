@@ -1,0 +1,65 @@
+.main-header {
+  background-color: darken($primary-light, 5%);
+  //height: 100px;
+  margin-bottom: 10px;
+  width: 100%;
+  //min-width: 150px;
+  @include mq-small{
+    height: 50px;
+  }
+  @include mq-medium {
+    height: 50px;
+    min-width: $page-min-width;
+  }
+}
+
+.header-contents {
+  display: flex;
+  //height: 100%;
+  //margin: 0 auto;
+  //max-width: $page-max-width;
+  //padding: 0 5px;
+
+  flex-direction: column;
+  //justify-content: space-between;
+  //@include setMaxMinWidth();
+  .logo {
+  }
+  @include mq-small{
+    height: 100%;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  @include mq-medium {
+    display: flex;
+    margin: 0 auto;
+    max-width: $page-max-width;
+    padding: 0 5px;
+
+    flex-flow: row;
+    justify-content: space-between;
+    @include setMaxMinWidth();
+  }
+}
+
+
+.logo {
+  display: none;
+  line-height: 50px;
+  padding-left: 50px;
+
+  flex: 1;
+  //align-self: flex-end;
+  //text-align: center;
+  @include mq-medium{
+    display: block;
+    //line-height: 50px;
+    //padding-left: 50px;
+
+    //flex: 1;
+    // align-self: flex-end;
+    // text-align: right;
+  }
+
+}

@@ -1,0 +1,77 @@
+.user {
+  display: flex;
+  //justify-content: space-between;
+  align-items: center;
+  padding-right: 15px;
+
+  &:hover {
+    color: $secondary-mid;
+    background-color: lighten($primary-dark, 3);
+    cursor: pointer;
+  }
+
+  .user-image {
+    @include userImage();
+  }
+
+  &__info-wrapper {
+    flex: 1;
+    margin: 0 5px;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  &__name {
+    font-weight: bold;
+    font-size: larger;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__last-message {
+    font-style: italic;
+    font-size: smaller;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.5em;
+  }
+
+  &__last-message-time {
+    background-color: $secondary-light;
+    border-radius: 10px;
+    color: $primary-dark;
+    font-size: smaller;
+    margin: 5px;
+    padding: 5px 10px;
+  }
+
+  .user-tools {
+    display: none;
+  }
+
+  &:hover .user-tools {
+    display: flex;
+    margin-right: 10px;
+  }
+}
+// .user:nth-of-type(odd) {
+//   background-color: lighten($primary-dark, 5%);
+// }
+.avatar-wrapper {
+    position: relative;
+}
+.online-status {
+  display: inline-block;
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  border-radius: 50px;
+  width: 20px;
+  height: 20px;
+  background-image: radial-gradient(closest-side at 30% 30%, white, gray);
+  background-color: gray;
+  &--active {
+    background-image: radial-gradient(closest-side at 30% 30%, white, forestgreen);
+    background-color: forestgreen;
+  }
+}

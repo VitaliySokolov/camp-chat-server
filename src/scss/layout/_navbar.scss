@@ -1,0 +1,8 @@
+//$nav-height: 50px;
+
+.nav-main {
+  @extend .horizontal-link-list;
+  @include mq-medium {
+    padding-left: 0;
+  }
+}

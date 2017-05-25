@@ -1,0 +1,21 @@
+.rooms-wrapper {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.room-list {
+  overflow-x: hidden;
+  overflow-y: auto;
+  margin-right: -15px;
+}
+
+// .cb-toggle-sb:not(:checked)+.sidebar .room-list {
+//   display: none;
+//   @include mq-small {
+//     display: block;
+//   }
+// }
+
+// .cb-toggle-lists:checked ~ .sidebar .rooms-wrapper {
+//   display: none;
+// }

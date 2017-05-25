@@ -1,13 +1,17 @@
 {
   "extends": [
     "eslint:recommended",
-    "@eleks/eleks"
+    "@eleks/eleks",
+    "plugin:react/recommended"
   ],
   "env": {
+    "browser": true,
+    "commonjs": true,
     "node": true,
     "es6": true,
     "mocha": true,
-    "mongo": true
+    "mongo": true,
+    "jasmine": true
   },
   "rules": {
     "no-console": [
@@ -22,5 +26,8 @@
     ],
     "quotes":	[2,	"single"],
     "eol-last":	0
+  },
+  "parserOptions": {
+    "ecmaVersion": 6
   }
 }

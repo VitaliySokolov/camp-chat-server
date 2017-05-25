@@ -1,0 +1,23 @@
+.main {
+  background-color: #fff;
+  border-radius: 0 10px 10px 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  width: 100%;
+  &--single {
+    border-radius: 10px;
+    // padding: 10px;
+  }
+}
+
+.cb-toggle-sb:checked~.main,
+.sidebar--opened~.main {
+  display: none;
+  // display: none;
+
+  @include mq-medium {
+    display: flex;
+  }
+}

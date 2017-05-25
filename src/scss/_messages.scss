@@ -1,0 +1,155 @@
+.messages-container {
+  background-color: $message-list-bg-color;
+  border-radius: 0 10px 10px 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  //min-height: 8em;
+  //max-height: $container-max-height;
+  padding: 10px;
+  width: 100%;
+
+  flex: 1;
+  justify-content: space-between;
+  @include mq-small {
+    border-radius: 10px 10px 0 0;
+    min-width: $container-min-width;;
+  }
+}
+
+.messages-header {
+  display: flex;
+  padding: 20px;
+  flex-shrink: 0;
+
+  justify-content: space-between;
+}
+.notification img {
+  background-color: $primary-light;
+  width: 20px;
+}
+
+.logo-image img {
+  height: 30px;
+}
+
+.personal-menu img {
+  width: 20px;
+}
+
+.message-list {
+  list-style: none;
+  overflow-y: auto;
+  overflow-x: hidden;
+  margin-right: -20px;
+  padding-right: 20px;
+}
+
+.message-list-row {
+  display: flex;
+  padding: 5px;
+
+  flex-flow: row;
+  justify-content: flex-end;
+  .user-image {
+    @include userImage();
+  }
+  .message {
+    max-width: 60%;
+
+    order: -1;
+    .message-text {
+      background-color: $message-item-color;
+      border-radius: 10px;
+      padding: 20px 30px;
+    }
+    .message-time {
+      color: darken($main-bg-color, 20%);
+      font-size: smaller;
+      margin-top: 5px;
+    }
+  }
+
+  &:nth-of-type(odd) {
+    justify-content: flex-start;
+     .message {
+       order: 1;
+    }
+    .message-time {
+      float: right;
+    }
+  }
+
+  &--self {
+    // justify-content: flex-start;
+     .message {
+      //  order: 1;
+       .message-text {
+        background-color: $self-message-item-color;
+        color: #fff;
+      }
+    }
+    // .message-time {
+    //   float: right;
+    // }
+  }
+}
+
+// .message-list-row:nth-of-type(odd) {
+//   justify-content: flex-start;
+//   .message {
+//   // background-color: #f00;
+//   order: -1;
+//   }
+// }
+
+.message-input {
+  display: flex;
+  margin: 15px 10px 10px 10px;
+  min-height: 3em;
+  &-element {
+    // box-shadow: 0 0 1px #333;
+    background-color: $message-item-color;
+    border: 0 $message-item-color;
+    border-radius: 20px 0 0 20px;
+    font-size: $body-font-size;
+    overflow: hidden;
+    padding: 5px 15px;
+    resize: none;
+    width: 80%;
+    &:focus {
+      border: 0;
+      outline: none !important;
+    }
+  }
+  .emoji {
+    background-color: $message-item-color;
+    border: 0; //1px solid;
+    border-radius: 0 20px 20px 0;
+    // height: 40px;
+    width: 40px;
+    &:hover {
+      color: red;
+      font-weight: bold;
+    }
+    img:hover {
+      border-radius: 50%;
+      box-shadow: 0 0 5px $secondary-dark;
+    }
+    &:focus {
+      border: 0;
+      outline: none !important;
+    }
+    &::-moz-focus-inner {
+      border: 0;
+    }
+  }
+}
+
+//tmp
+
+.robot {
+  border-radius: 0 !important;
+  font-family: monospace;
+  font-size: smaller;
+}

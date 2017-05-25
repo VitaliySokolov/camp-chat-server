@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "authorId": 1,
+    "roomId": 1,
+    "text": "Hello"
+  },
+  {
+    "id": 2,
+    "authorId": 2,
+    "roomId": 1,
+    "text": "Hi"
+  },
+  {
+    "id": 3,
+    "authorId": 1,
+    "roomId": 2,
+    "text": "How are you?"
+  },
+  {
+    "id": 4,
+    "authorId": 3,
+    "roomId": 2,
+    "text": "Fine!"
+  },
+  {
+    "id": 5,
+    "authorId": 3,
+    "roomId": 3,
+    "text": "Anybody???"
+  }
+]

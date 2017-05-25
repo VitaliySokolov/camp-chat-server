@@ -1,0 +1,31 @@
+.room-new {
+  margin: 10px;
+  display: flex;
+  height: $sidebar-medium;
+  justify-content: center;
+  position: relative;
+  align-items: center;
+
+  &__input {
+    border-radius: 10px;
+    border: 0 none;
+    font-size: larger;
+    margin-right: -40px;
+    outline: 0 none;
+    padding: 5px 40px 5px 5px;
+  }
+  &__add {
+    background-color: rgba(0, 0, 0, 0);
+    border: 0 none;
+    font-size: larger;
+
+    &:hover {
+      color: red;
+    }
+    @include no-focus-outline;
+  }
+}
+
+.cb-toggle-sb:not(:checked)+.sidebar .room-new {
+  display: none;
+}

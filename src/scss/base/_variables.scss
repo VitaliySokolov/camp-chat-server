@@ -1,0 +1,32 @@
+$dev-design: true;
+
+@if ($dev-design) {
+  @debug("DEV-DESIGN is running");
+}
+
+// screens
+$screen-small: 380px;
+$screen-medium: 768px;
+$screen-large: 1100px;
+
+// sizes
+$page-max-width: $screen-large;
+$page-min-width: 300px;
+$sidebar-small: 10px;
+$sidebar-medium: 60px;
+$sidebar-large: 400px;
+
+$user-img-size: 50px;
+$user-list-max-width: 400px; // 60px/400px
+$user-list-hide-max-width: 75px;
+$user-list-text-max-width: 300px;
+$container-max-height: calc(100vh - 40px); //80vh;
+$container-min-width: 300px;
+
+// fonts
+$body-font: serif;
+$body-font-size: 17px;
+
+// form vars
+$form-link-color: $primary-dark;
+

@@ -1,0 +1,57 @@
+@mixin userImage($w: $user-img-size, $h: $user-img-size) {
+  background-color: $user-img-bg-color;
+  border-radius: 50%;
+  height: $h;
+  margin: 5px;
+  width: $w;
+}
+
+@mixin setMaxMinWidth(
+  $max: $page-max-width,
+  $min: $page-min-width) {
+    max-width: $max;
+    min-width: $min;
+}
+
+@mixin hoverChangeColor {
+  &:hover {
+    background-color: $secondary-light;
+    color: $primary-mid;
+    transition: .3s ease-in;
+  }
+}
+
+@mixin mq-small {
+  @media (min-width: $screen-small) {
+    @content;
+  }
+}
+
+@mixin mq-medium {
+  @media (min-width: $screen-medium) {
+    @content;
+  }
+}
+
+@mixin mq-large {
+  @media (min-width: $screen-large) {
+    @content;
+  }
+}
+
+@mixin dev-tool {
+  @if ($dev-design) {
+    @content;
+  }
+}
+
+@mixin no-focus-outline {
+    &:focus {
+      border: 0;
+      outline: none !important;
+    }
+    &::-moz-focus-inner {
+      border: 0;
+    }
+
+}

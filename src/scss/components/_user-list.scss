@@ -1,0 +1,22 @@
+.users-wrapper {
+  display: flex;
+  flex-direction: column;
+  // overflow-y: hidden;
+  overflow: hidden;
+}
+.user-list {
+  overflow-x: hidden;
+  overflow-y: auto;
+  margin-right: -15px;
+}
+
+.cb-toggle-sb:not(:checked)+.sidebar .user-list {
+  display: none;
+  @include mq-small {
+    display: block;
+  }
+}
+
+.cb-toggle-lists:not(:checked) ~ .sidebar .users-wrapper {
+  display: none;
+}

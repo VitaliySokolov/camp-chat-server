@@ -1,0 +1,57 @@
+
+.authbar {
+  //
+  order: -1;
+  height: 50px;
+  // align-self: flex-end;
+  align-self: flex-end;
+
+  .auth-wrapper {
+    height: 100%;
+    display: flex;
+
+    // justify-content: center;
+    // align-content: center;
+    align-items: center;
+  }
+  @include mq-small {
+    order: 0;
+  }
+
+  @include mq-medium {
+    padding-right: 0;
+  }
+  .link-list {
+    @extend .horizontal-link-list;
+  }
+  .user-image {
+      vertical-align: top;
+
+      @include userImage(initial, calc(100% - 10px));
+  }
+  .user-name {
+    padding: 0 10px;
+  }
+  .btn-logout {
+    // background-color: $primary-mid;
+    border: none;
+    color: $secondary-light;
+    //display: inline-block;
+    height: 100%;
+    outline: none;
+    padding: 0 10px;
+
+    @include hoverChangeColor;
+    &:hover {
+      background-color: $primary-mid;
+    }
+  }
+
+  //dev tools
+  #logged:not(:checked) ~ .logged {
+    display: none
+  }
+  #logged:checked ~ .guest {
+    display: none
+  }
+}

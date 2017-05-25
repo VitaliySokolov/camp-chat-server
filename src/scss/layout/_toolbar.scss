@@ -1,0 +1,13 @@
+.toolbar {
+  display: none;
+}
+@include dev-tool {
+  .toolbar {
+    display: block;
+    //margin-bottom: 10px;
+    margin: 10px auto;
+    padding-left: 20px;
+
+    @include setMaxMinWidth();
+  }
+}
