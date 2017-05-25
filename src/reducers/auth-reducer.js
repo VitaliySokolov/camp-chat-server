@@ -1,6 +1,6 @@
 import {
     LOGIN_REQUEST,
-    LOGIN_SUCCESS,
+    // LOGIN_SUCCESS,
     LOGIN_FAILURE,
     LOGOUT,
     REGISTER_SUCCESS,
@@ -9,6 +9,7 @@ import {
 } from '../actions/userActions.js';
 
 import {
+    LOGIN_WS_SUCCESS,
     LOGIN_WS_FAILURE
 } from '../actions/wsActions';
 
@@ -29,7 +30,7 @@ const authInitialState = {
 
 export default createReducer(authInitialState, {
     [LOGIN_REQUEST]: state => ({ ...state, logging: true }),
-    [LOGIN_SUCCESS]: (state, { user, token }) => ({
+    [LOGIN_WS_SUCCESS]: (state, { user, token }) => ({
         ...state,
         id: user.id,
         logging: false,

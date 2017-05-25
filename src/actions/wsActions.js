@@ -33,9 +33,10 @@ function loginWsRequest () {
     };
 }
 
-function loginWsSuccess () {
+function loginWsSuccess (data) {
     return {
-        type: LOGIN_WS_SUCCESS
+        type: LOGIN_WS_SUCCESS,
+        payload: data
     };
 }
 
@@ -131,7 +132,7 @@ export const initWS = (data, store) => dispatch => {
             connectWsToStore(dispatch);
             socket.emit('authenticate', { token: data.token })
                 .once('authenticated', () => dispatch(
-                    loginWsSuccess()))
+                    loginWsSuccess(data)))
                 .once('unauthorized', msg => dispatch(
                     loginWsFailure(`unauthorized: ${JSON.stringify(msg.data)}`)))
                 .once('join', () => {

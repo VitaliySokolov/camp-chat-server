@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import {
     BrowserRouter as Router,
     Route,
+    Switch,
     Redirect
 } from 'react-router-dom';
 import { bindActionCreators } from 'redux';
@@ -15,18 +16,18 @@ import SidebarContainer from './sidebar';
 import Login from '../components/login/login';
 import Register from '../components/register/register';
 import Footer from './footer';
+import NotFound from '../components/not-found';
 
 import * as userActions from '../actions/userActions.js';
 
 const GuardChatsRoute = ({ ...rest }) =>
     <Route {...rest} render={props =>
         rest.isLogged
-            ? 
-                <div className="page-wrapper">
+            ? <div className="page-wrapper">
                     <SidebarContainer />
                     <ChatContainer />
                 </div>
-            
+
             : <Redirect to={{
                 pathname: '/login',
                 state: { from: props.location }
@@ -62,6 +63,7 @@ class App extends Component {
                     <Header
                         user={this.props.loggedUser}
                         logout={logout} />
+                    <Switch>
                     <Route exact path="/" component={Home} />
                     <GuardChatsRoute path="/chats"
                         isLogged={this.props.loggedUser.isLogged} />
@@ -74,6 +76,8 @@ class App extends Component {
                         () => <Register
                             handleRegister={handleRegister}
                             loggedUser={this.props.loggedUser} />} />
+                    <Route component={NotFound} />
+                    </Switch>
                     <Footer />
                 </div>
             </Router>
