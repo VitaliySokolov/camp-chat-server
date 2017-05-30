@@ -13,7 +13,8 @@ const router = express.Router(), // eslint-disable-line new-cap
     CREATED = 201,
     BAD_REQUEST = 400,
     UNAUTHORIZED = 401,
-    NOT_FOUND = 404,
+    // NOT_FOUND = 404,
+    CONFLICT = 409,
     DB_DUPLICATE_KEY = 11000;
 
 router.post('/login', (req, res) => {
@@ -85,7 +86,7 @@ router.post('/signup', (req, res) => {
 
                 if (err.code === DB_DUPLICATE_KEY)
                     errorMsg = `User with username "${req.body.username}" already exist`;
-                res.status(NOT_FOUND).json({ error: errorMsg });
+                res.status(CONFLICT).json({ error: errorMsg });
             } else
                 res.status(CREATED).send();
         });

@@ -195,7 +195,7 @@ describe('Testing routes', () => {
             .send({ username: 'foo', password: 'baz' })
             .end((err, res) => {
                 should.exist(err);
-                res.status.should.equal(404);
+                res.status.should.equal(409);
                 res.body.should.have.property('error',
                     'User with username "foo" already exist');
                 done();
