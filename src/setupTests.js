@@ -1,25 +1,27 @@
+const chai = require('chai'),
+    should = chai.should();
 
 class LocalStorageMock {
-  constructor() {
-    this.store = {};
-  }
+    constructor () {
+        this.store = {};
+    }
 
-  clear() {
-    this.store = {};
-  }
+    clear () {
+        this.store = {};
+    }
 
-  removeItem(key) {
-    delete this.store[key];
-  }
+    removeItem (key) {
+        delete this.store[key];
+    }
 
-  getItem(key) {
-    return this.store[key];
-  }
+    getItem (key) {
+        return this.store[key];
+    }
 
-  setItem(key, value) {
-    this.store[key] = value.toString();
-  }
-};
+    setItem (key, value) {
+        this.store[key] = value.toString();
+    }
+}
 
 global.localStorage = new LocalStorageMock;
 
@@ -30,4 +32,4 @@ global.localStorage = new LocalStorageMock;
 // };
 // global.localStorage = localStorageMock
 
-global.fetch = require('jest-fetch-mock');
+// global.fetch = require('jest-fetch-mock');

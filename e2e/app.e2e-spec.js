@@ -1,6 +1,8 @@
 const { browser, element, by } = require('protractor');
 
 describe('chat app', () => {
+    const WAIT_FOR_LOGIN_IN_MS = 3000;
+
     beforeAll(() => {
         browser.waitForAngularEnabled(false);
     });
@@ -18,10 +20,13 @@ describe('chat app', () => {
         expect(element.all(by.css('input')).count()).toBe(2);
     });
 
-    it('should login', () => {
+    it('should login', done => {
         browser.get('/login');
         element.all(by.css('input')).sendKeys('demo');
         element(by.css('#login')).click();
-        expect(browser.getCurrentUrl()).toMatch(/\/chats$/);
+        setTimeout(() => {
+            expect(browser.getCurrentUrl()).toMatch(/\/chats$/);
+            done();
+        }, WAIT_FOR_LOGIN_IN_MS);
     });
 });

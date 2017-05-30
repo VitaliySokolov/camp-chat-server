@@ -13,6 +13,7 @@ exports.config = {
     },
     directConnect: true,
     baseUrl: 'http://localhost:3000/',
+    // baseUrl: 'https://vs-chat-server.herokuapp.com/',
     framework: 'jasmine',
     jasmineNodeOpts: {
         showColors: true,
