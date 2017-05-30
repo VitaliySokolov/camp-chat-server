@@ -24,7 +24,7 @@ export class RegisterFormWithoutRouter extends Component {
 
         this.state = {
             login: null,
-            loginError: loggedUser.error === 'Code: 404 (Not Found)' ? 'Please choose another login' : '',
+            loginError: loggedUser.error === 'Conflict' ? 'Please choose another login' : '',
             email: null,
             emailError: '',
             password: null,

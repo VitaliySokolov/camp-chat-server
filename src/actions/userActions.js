@@ -1,6 +1,6 @@
-import { loginRhcloud, registerRhcloud } from '../api/api';
+import { SERVER_URL } from '../config';
 import { initWS, logoutWS } from './wsActions';
-// import { getMessageList } from './chatActions';
+import { checkHttpStatus, parseJSON, prepareFetchOptions } from '../utils';
 
 export const LOGIN_REQUEST = 'LOGIN_REQUEST';
 export const LOGIN_SUCCESS = 'LOGIN_SUCCESS';
@@ -12,6 +12,20 @@ export const REGISTER_FAILURE = 'REGISTER_FAILURE';
 
 export const LOGOUT = 'LOGOUT';
 
+
+function fetchRegister ({ username, password, email }) {
+    const options = prepareFetchOptions();
+
+    options.body = JSON.stringify({ username, password, email });
+    return fetch(`${SERVER_URL}/signup`, options);
+}
+
+function fetchLogin ({ username, password }) {
+    const options = prepareFetchOptions();
+
+    options.body = JSON.stringify({ username, password });
+    return fetch(`${SERVER_URL}/login`, options);
+}
 
 export function logout () {
     return function (dispatch) {
@@ -52,25 +66,17 @@ function handleLoginFailure (error) {
     };
 }
 
-// function handleConnectWS(data, store) {
-//   initSoketIO(data, store);
-//   return {
-//     type: 'CONNECT_TO_WS'
-//   }
-// }
-
-export const handleLogin = userInfo => (dispatch, getStore) => {
+export const handleLogin = userInfo => dispatch => {
     const { username, password } = userInfo;
 
     dispatch(handleLoginRequest());
-    loginRhcloud(username, password).then(data => {
-        dispatch(handleLoginSuccess(data));
-        dispatch(initWS(data));
-        // getWsMessages();
-        // dispatch(getMessageList())
-    }).catch(error => {
-        dispatch(handleLoginFailure(error));
-    });
+    fetchLogin({ username, password })
+        .then(checkHttpStatus)
+        .then(parseJSON)
+        .then(data => {
+            dispatch(handleLoginSuccess(data));
+            dispatch(initWS(data));
+        }).catch(error => dispatch(handleLoginFailure(error.message || error)));
 };
 
 export const loginFromStorage = () => dispatch => {
@@ -87,36 +93,31 @@ export const loginFromStorage = () => dispatch => {
             payload
         });
         dispatch(initWS(payload));
-        // getWsMessages();
-        // dispatch(getMessageList())
-        // connectWS({ token });
-    } else 
+    } else
         dispatch({
             type: 'FAIL_AUTOLOGIN'
         });
-    
 };
 
-export const handleRegister = userInfo => dispatch => {
-    const { username, password, email } = userInfo;
-
+export const handleRegister = ({ username, password, email }) => dispatch => {
     dispatch({
         type: REGISTER_REQUEST
     });
-    registerRhcloud(username, password, email).then(data => {
-        // console.log(data);
-        // (data !== 'OK') || Promise.reject(data);
-        dispatch({
-            type: REGISTER_SUCCESS
+    fetchRegister({ username, password, email })
+        .then(checkHttpStatus)
+        .then(response => {
+            if (response.status === 201)
+                dispatch({
+                    type: REGISTER_SUCCESS
+                });
+            else
+                throw new Error(response.statusText);
+        })
+        .catch(error => {
+            dispatch({
+                type: REGISTER_FAILURE,
+                payload: { error: error.message || error }
+            });
         });
-    }).catch(error => {
-        dispatch({
-            type: REGISTER_FAILURE,
-            payload: { error }
-        });
-    });
 };
 
-// const hadleLoginWS = (data) => (dispatch, getState) => {
-//   connectWS(data);
-// }

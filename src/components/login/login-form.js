@@ -84,9 +84,9 @@ class LoginFormWithoutRouter extends Component {
             </div>
             : null;
 
-        const loginMessageFail = loggedUser.error === '401: Unauthorized'
+        const loginMessageFail = loggedUser.error === 'Unauthorized'
             ? <div className="login-message login-message--fail">
-                Invalid Login or password
+                Invalid login or password
             </div>
             : null;
 
