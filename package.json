@@ -6,9 +6,9 @@
   "scripts": {
     "server": "node ./server/server.js",
     "server:dev": "nodemon --watch server ./server/server.js",
-    "test": "NODE_ENV=test nyc --reporter=html --reporter=text mocha test",
-    "test:server": "nodemon --exec 'NODE_ENV=test mocha -R nyan' test",
-    "test:all": "NODE_ENV=test nyc --reporter=html --reporter=text mocha --require=src/setupTests.js --require=ignore-styles --require=test/helpers/browser.js test/**/*.spec.js src/**/*.spec.js",
+    "test": "NODE_ENV=test nyc --reporter=html --reporter=text mocha --recursive test",
+    "test:server": "nodemon --exec 'NODE_ENV=test mocha --recursive -R nyan' test",
+    "test:all": "NODE_ENV=test nyc --reporter=html --reporter=text mocha --require=src/setupTests.js --require=ignore-styles --require=test/helpers/browser.js --recursive test src/**/*.spec.js",
     "test:mocha-client": "NODE_ENV=test mocha --require=src/setupTests.js --require=ignore-styles --require=test/helpers/browser.js src/**/*.spec.js",
     "prod": "NODE_ENV=production node ./server/server.js",
     "lint": "eslint ./server ./src ./shared",

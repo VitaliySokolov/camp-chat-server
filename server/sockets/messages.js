@@ -127,9 +127,9 @@ ChatSocket.prototype.chatMessageHandler = function (msg) {
             this.sendError(err);
         else
             this.findAuthor(savedMessage)
-                .then(this.formatMessage)
+                .then(this.formatMessage.bind(this))
                 .then(this.broadcastMessage.bind(this))
-                .catch(this.sendError);
+                .catch(this.sendError.bind(this));
     });
 };
 

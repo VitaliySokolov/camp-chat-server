@@ -1,5 +1,5 @@
-function ChatSocket (io, socket) {
-    this.io = io;
+function ChatSocket (socket) {
+    this.io = socket.server;
     this.socket = socket;
 }
 
